@@ -253,6 +253,7 @@ h1,h2,h3,.dhead h2{font-family:"Lexend","Be Vietnam Pro","Segoe UI",sans-serif}
 .f .v.em{font-size:13px;font-weight:400;color:#b3bab6}
 .f.key{background:#f6fbf9}
 .f.key label{color:var(--brand-d)}
+.ver{font-family:"Be Vietnam Pro","Segoe UI",sans-serif;font-size:10px;font-weight:600;color:#8a9893;background:#f1f4f2;border:1px solid #e3e9e6;border-radius:999px;padding:1px 7px;margin-left:6px;vertical-align:3px;letter-spacing:.02em}
 
 /* ---- Chữ danh sách bên trái: cùng phong cách với form ---- */
 .item{padding:10px 14px 11px 16px;gap:3px 8px;align-items:center}
@@ -270,7 +271,7 @@ h1,h2,h3,.dhead h2{font-family:"Lexend","Be Vietnam Pro","Segoe UI",sans-serif}
 <div class="app">
   <header>
     <button class="btn menu-btn" id="btnList" title="Danh sách ý tưởng">☰</button>
-    <h1>Duyệt ý tưởng<b>.</b></h1>
+    <h1>Duyệt ý tưởng<b>.</b><span class="ver" id="verTag" title="Phiên bản đang chạy"></span></h1>
     <span class="src" id="srcLabel"></span>
     <select class="btn hidden" id="sheetSel" title="Chọn sheet"></select>
     <div class="spacer"></div>
@@ -411,7 +412,8 @@ h1,h2,h3,.dhead h2{font-family:"Lexend","Be Vietnam Pro","Segoe UI",sans-serif}
 
 <script>
 /* ---- Tự cập nhật: so mã phiên bản với bản trên server, tránh phải xoá bộ nhớ đệm ---- */
-const BUILD = "2026.11.15-3";
+const BUILD = "2026.11.15-4";
+document.addEventListener("DOMContentLoaded", () => { const v = document.getElementById("verTag"); if(v) v.textContent = "v" + BUILD; });
 (function autoUpdate(){
   if(!/^https?:$/.test(location.protocol) || !/github\.io$/i.test(location.hostname)) return;   // chỉ bản đăng trên GitHub Pages
   const check = () => fetch(location.pathname + "?nocache=" + Date.now(), {cache:"no-store"})
