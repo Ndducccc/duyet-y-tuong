@@ -155,6 +155,9 @@ kbd{font-family:inherit;font-size:11.5px;border:1px solid var(--line);border-bot
 .modal p.sub{margin:0 0 14px;color:var(--muted)}
 .card{border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:12px}
 .card h3{margin:0 0 6px;font-size:15px}
+.card.hl{border-color:var(--brand);box-shadow:0 0 0 3px var(--brand-2)}
+.chk{display:flex;align-items:center;gap:6px;font-size:13px;margin:0 0 8px;cursor:pointer}
+.sw{display:inline-block;width:11px;height:11px;border-radius:2px;border:1px solid #0002;vertical-align:-1px;margin:0 2px 0 6px}
 .card ol{margin:6px 0 10px;padding-left:20px;color:#3d4642}
 .card .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
 .form{display:grid;grid-template-columns:180px 1fr;gap:10px 12px;align-items:center}
@@ -220,6 +223,27 @@ pre.code{background:#f6f7f5;border:1px solid var(--line);border-radius:8px;paddi
 }
 @media (max-width:900px){.main{grid-template-columns:1fr}.list{max-height:40vh}.ways{grid-template-columns:1fr}.review-grid{grid-template-columns:1fr}}
 @media (max-width:1200px) and (min-width:901px){.review-grid{grid-template-columns:1fr .6fr}.review-grid>div:last-child{grid-column:1/-1}}
+
+/* ---- Lọc Đơn vị dạng danh sách ---- */
+.dvrow{display:flex;align-items:center;gap:8px;padding-bottom:6px;border-bottom:1px dashed var(--line)}
+.dvrow.hidden{display:none}
+.dvrow .lbl{font-size:11px;color:var(--muted)}
+.dvrow select{flex:1;min-width:0;border:1px solid var(--line);border-radius:999px;padding:4px 12px;font-size:12.5px;cursor:pointer}
+.dvrow select.on{border-color:var(--brand-d);background:var(--brand-2);color:var(--brand-d);font-weight:600}
+
+/* ---- Chữ phần chi tiết: rõ thứ bậc, dễ đọc ---- */
+body{font-family:"Be Vietnam Pro","Segoe UI",Roboto,system-ui,sans-serif;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+h1,h2,h3,.dhead h2{font-family:"Lexend","Be Vietnam Pro","Segoe UI",sans-serif}
+.dhead h2{font-size:20px;font-weight:600;line-height:1.4;color:#123b2e}
+.dhead .code{font-size:12.5px;color:var(--brand-d);letter-spacing:.02em}
+.f{padding:11px 14px;box-shadow:0 1px 2px rgba(16,40,32,.05)}
+.f label{font-size:10.5px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:#7b8c85;margin-bottom:5px}
+.f .v{font-size:14.5px;line-height:1.7;color:#1d2a25}
+.mainc .f .v{font-size:15px}
+.side .f .v{font-weight:600;line-height:1.5;color:#173b30}
+.f .v.em{font-size:13px;font-weight:400;color:#b3bab6}
+.f.key{background:#f6fbf9}
+.f.key label{color:var(--brand-d)}
 </style>
 </head>
 <body>
@@ -261,7 +285,7 @@ pre.code{background:#f6f7f5;border:1px solid var(--line);border-radius:8px;paddi
         <input id="q" placeholder="Tìm mã số, tên, tác giả, nội dung…  ( / )">
         <select class="tbsel hidden" id="tbSel" title="Lọc theo Tiểu ban"></select>
         <div class="chips tbchips hidden" id="tbChips" title="Lọc theo Tiểu ban đánh giá"></div>
-        <div class="chips tbchips hidden" id="dvChips" title="Lọc theo Đơn vị công tác"></div>
+        <div class="dvrow hidden" id="dvChips" title="Lọc theo Đơn vị công tác"><span class="lbl">Đơn vị:</span><select id="dvSel"></select></div>
         <div class="chips" id="chips">
           <button class="chip on" data-f="all">Tất cả <span></span></button>
           <button class="chip" data-f="todo">Chưa duyệt <span></span></button>
@@ -306,8 +330,18 @@ pre.code{background:#f6f7f5;border:1px solid var(--line);border-radius:8px;paddi
   <div class="modal">
     <h2>Ghi kết quả về Excel</h2>
     <p class="sub" id="expSummary"></p>
+    <div class="card hl" id="expFileCard">
+      <h3>Xuất file Excel mới đã điền kết quả (nhanh nhất)</h3>
+      <ol>
+        <li>Tool lấy file Excel gốc, ghi kết quả vào cột <b class="cS">S</b>, <b class="cT">T</b>, <b class="cU">U</b> theo <b>Mã số</b>, giữ nguyên định dạng, rồi tải về một <b>file mới</b>. File gốc không bị sửa.</li>
+        <li>Mở file mới kiểm tra, sau đó tải lên SharePoint hoặc chép các cột sang file chung.</li>
+      </ol>
+      <label class="chk"><input type="checkbox" id="expMark" checked> Tô màu ô vừa ghi:<span class="sw" style="background:#E2EFDA"></span>duyệt<span class="sw" style="background:#FCE4D6"></span>không công nhận<span class="sw" style="background:#FFF2CC"></span>khác</label>
+      <div class="row"><button class="btn primary" id="btnXlsx">⬇ Tải file .xlsx mới</button><label class="btn">Chọn file gốc khác…<input type="file" id="pickOrig" accept=".xlsx,.xlsm" hidden></label></div>
+      <div class="orig" id="expFileMsg"></div>
+    </div>
     <div class="card">
-      <h3>Cách A · Office Script (khuyên dùng)</h3>
+      <h3>Cách A · Office Script</h3>
       <ol>
         <li>Bấm <b>Copy script</b> bên dưới.</li>
         <li>Trong Excel Online: tab <b>Tự động hóa</b> → <b>Tập lệnh mới</b>, xoá code mẫu, dán vào.</li>
@@ -368,7 +402,8 @@ const DEFAULT_OPTS = ["Cho nghiên cứu/áp dụng","Không công nhận"];
 let settings = Object.assign({opts: DEFAULT_OPTS, colS:"S", colT:"T", colU:"U", reward:"500.000", origin:"A1"}, store.get("ytq.settings.v2", {}));
 
 // ----- state -----
-let source = null;      // {kind:'file'|'paste', name, sheets:{name: grid}, origins:{name:{r,c}}}
+let rawFile = null;     // {name, bytes} file .xlsx gốc đã kéo thả trong phiên này
+let source = null;     // {kind:'file'|'paste', name, sheets:{name: grid}, origins:{name:{r,c}}}
 let sheetName = "";
 let model = null;       // {headers, headerRow, startRow, startCol, maCol, sCol, uCol, rows:[...], allRows:[...]}
 let edits = {};         // key -> {s, u}
@@ -410,6 +445,7 @@ function loadFile(file){
       const names = Object.keys(sheets);
       if(!names.length) throw new Error("File không có sheet dữ liệu.");
       source = {kind:"file", name:file.name, sheets, origins};
+      rawFile = {name:file.name, bytes:new Uint8Array(e.target.result)};   // giữ bản gốc để xuất file mới (không lưu vào trình duyệt)
       // prefer first sheet that has "Mã số"
       const first = names.find(n => findHeader(sheets[n]).row >= 0) || names[0];
       openSheet(first);
@@ -464,6 +500,7 @@ function loadPaste(e){
   if(!grid || grid.length < 2){ toast("Không nhận được bảng. Hãy copy vùng ô trong Excel rồi dán lại."); return; }
   if(findHeader(grid).row < 0){ toast("Không thấy cột “Mã số” trong vùng đã dán. Hãy copy cả dòng tiêu đề."); return; }
   const o = parseCell(settings.origin);
+  rawFile = null;
   source = {kind:"paste", name:"Dữ liệu dán từ Excel", sheets:{"(Đã dán)":grid}, origins:{"(Đã dán)":o}};
   openSheet("(Đã dán)");
   toast("Đã nạp " + model.rows.length + " ý tưởng từ clipboard");
@@ -831,11 +868,12 @@ function openSheet(name){
   const dvs = {};
   if(model.dvCol >= 0) model.rows.forEach(r => unitsOf(r).forEach(u => dvs[u] = (dvs[u]||0) + 1));
   const dvNames = Object.keys(dvs).sort((a,b)=>a.localeCompare(b,"vi"));
-  const dvBox = $("#dvChips");
-  dvBox.innerHTML = `<span class="lbl">Đơn vị:</span><button class="chip tb dv on" data-dv="">Tất cả</button>` +
-    dvNames.map(n => `<button class="chip tb dv" data-dv="${esc(n)}">${esc(n)} <span>${dvs[n]}</span></button>`).join("");
-  dvBox.classList.toggle("hidden", dvNames.length < 2);
-  if(dvNames.includes(prevDv)){ dvFilter = prevDv; $$("#dvChips .chip.dv").forEach(x => x.classList.toggle("on", x.dataset.dv === prevDv)); }
+  const dvSel = $("#dvSel");
+  dvSel.innerHTML = `<option value="">Tất cả đơn vị (${dvNames.length})</option>` +
+    dvNames.map(n => `<option value="${esc(n)}">${esc(n)}  ·  ${dvs[n]} ý tưởng</option>`).join("");
+  $("#dvChips").classList.toggle("hidden", dvNames.length < 2);
+  if(dvNames.includes(prevDv)) dvFilter = prevDv;
+  dvSel.value = dvFilter; dvSel.classList.toggle("on", !!dvFilter);
   if(!EXCEL) saveSession();
   curIdx = -1; renderOpts(); refresh(true);
   const lastKey = store.get("ytq.lastKey", "");
@@ -1076,7 +1114,147 @@ function openExport(){
   $("#tsvStartS").textContent = settings.colS.toUpperCase() + (first?first.sheetRow:"");
   $("#tsvStartU").textContent = settings.colU.toUpperCase() + (first?first.sheetRow:"");
   $("#tsvWarn").textContent = source.kind==="paste" ? `Vị trí giả định vùng dán bắt đầu từ ô ${settings.origin.toUpperCase()} (đổi trong Cài đặt).` : "";
+  $("#expFileMsg").textContent = rawFile ? `File gốc: ${rawFile.name}` : "Phiên này chưa có file gốc (dữ liệu dán hoặc mở lại từ lần trước): bấm Tải file rồi chọn file Excel gốc.";
   $("#mExport").classList.add("show");
+}
+
+// ----- Xuất file .xlsx mới: sửa thẳng XML trong file gốc để giữ nguyên định dạng -----
+const xmlEsc = s => String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+const xmlUnesc = s => String(s).replace(/&lt;/g,"<").replace(/&gt;/g,">").replace(/&quot;/g,'"').replace(/&apos;/g,"'").replace(/&amp;/g,"&");
+const FILL = {ok:"FFE2EFDA", no:"FFFCE4D6", other:"FFFFF2CC"};
+
+function patchXlsx(bytes, mark){
+  // 1) Đọc file để tìm sheet, dòng tiêu đề, cột S/T/U và dòng của từng Mã số
+  const wb = XLSX.read(bytes, {type:"array"});
+  if(!wb.SheetNames.includes(sheetName)) throw new Error(`file không có sheet “${sheetName}”`);
+  const ws = wb.Sheets[sheetName]; if(!ws["!ref"]) throw new Error("sheet trống");
+  const rg = XLSX.utils.decode_range(ws["!ref"]);
+  const grid = XLSX.utils.sheet_to_json(ws, {header:1, defval:"", raw:false, blankrows:true});
+  const h = findHeader(grid); if(h.row < 0) throw new Error("sheet không có cột “Mã số”");
+  const headers = (grid[h.row]||[]).map(v => norm(v));
+  const fc = re => headers.findIndex(x => re.test(x.toLowerCase()));
+  let cS = fc(/phê duyệt/), cT = fc(/^thưởng/), cU = fc(/^ghi chú/);
+  if(cS < 0) cS = colToIdx(settings.colS) - rg.s.c;
+  if(cT < 0) cT = colToIdx(settings.colT) - rg.s.c;
+  if(cU < 0) cU = colToIdx(settings.colU) - rg.s.c;
+  const rowOf = new Map();
+  for(let r = h.row+1; r < grid.length; r++){ const m = norm((grid[r]||[])[h.col]); if(m && !rowOf.has(m)) rowOf.set(m, rg.s.r + r + 1); }
+  const sameFile = !!rawFile && bytes === rawFile.bytes && source.kind === "file";
+
+  // 2) Danh sách ô cần ghi (chỉ các trường đã thay đổi)
+  const writes = [], miss = []; let nRows = 0;
+  changedList().forEach(rec => {
+    const row = rec.ma ? rowOf.get(rec.ma) : (sameFile ? rec.sheetRow : undefined);
+    if(!row){ miss.push(rec.ma || ("Dòng " + rec.sheetRow)); return; }
+    const s = norm(curS(rec));
+    const color = /không công nhận/i.test(s) ? FILL.no : (s && s === norm(settings.opts[0])) ? FILL.ok : FILL.other;
+    let any = false;
+    [["s",cS],["t",cT],["u",cU]].forEach(([f,c]) => {
+      if(c < 0 || !diff(rec,f)) return;
+      const v = f==="s" ? curS(rec) : f==="t" ? curT(rec) : curU(rec);
+      writes.push({row, col: rg.s.c + c, f, v: String(v ?? ""), color}); any = true;
+    });
+    if(any) nRows++;
+  });
+  if(!writes.length) throw new Error(miss.length ? "không tìm thấy mã số nào trong file" : "chưa có kết quả nào thay đổi");
+
+  // 3) Mở gói zip của file gốc
+  const C = XLSX.CFB, z = C.read(bytes, {type:"array"});
+  const entry = p => { p = p.replace(/^\/+/, ""); const i = z.FullPaths.findIndex(f => f.slice(f.indexOf("/")+1) === p); return i < 0 ? null : z.FileIndex[i]; };
+  const dec = e => new TextDecoder().decode(e.content), enc = s => new TextEncoder().encode(s);
+  const wbx = dec(entry("xl/workbook.xml")), rels = dec(entry("xl/_rels/workbook.xml.rels"));
+  let rid = null;
+  for(const m of wbx.matchAll(/<sheet\b[^>]*>/g)){
+    const nm = (m[0].match(/\bname="([^"]*)"/)||[])[1];
+    if(nm !== undefined && xmlUnesc(nm) === sheetName){ rid = (m[0].match(/\s[\w]+:id="([^"]+)"/)||[])[1]; break; }
+  }
+  const rel = rid && [...rels.matchAll(/<Relationship\b[^>]*>/g)].map(m => m[0]).find(t => (t.match(/\bId="([^"]+)"/)||[])[1] === rid);
+  const target = rel && xmlUnesc((rel.match(/\bTarget="([^"]+)"/)||[])[1] || "");
+  if(!target) throw new Error("không tìm được sheet trong file");
+  const sheetEntry = entry(target.startsWith("/") ? target : "xl/" + target.replace(/^\.\//, ""));
+  if(!sheetEntry) throw new Error("không mở được sheet trong file");
+
+  // 4) Kiểu ô có tô màu: nhân bản style gốc của ô, đổi nền
+  const stEntry = mark ? entry("xl/styles.xml") : null;
+  let st = stEntry ? dec(stEntry) : null, styleFor = s => s;
+  if(st && /<fills\b/.test(st) && /<cellXfs\b/.test(st)){
+    const fillsInner = (st.match(/<fills\b[^>]*>([\s\S]*?)<\/fills>/)||[])[1] || "";
+    const nFills = (fillsInner.match(/<fill\b/g)||[]).length;
+    const xfsInner = (st.match(/<cellXfs\b[^>]*>([\s\S]*?)<\/cellXfs>/)||[])[1] || "";
+    const xfs = xfsInner.match(/<xf\b[^>]*?(?:\/>|>[\s\S]*?<\/xf>)/g) || [];
+    const newFills = [], newXfs = [], fillId = {}, cache = {};
+    styleFor = (s, color) => {
+      const k = s + "|" + color; if(cache[k] !== undefined) return cache[k];
+      if(fillId[color] === undefined){ fillId[color] = nFills + newFills.length; newFills.push(`<fill><patternFill patternType="solid"><fgColor rgb="${color}"/><bgColor indexed="64"/></patternFill></fill>`); }
+      let xf = xfs[+s] || xfs[0] || '<xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>';
+      xf = xf.replace(/\sfillId="\d+"/, "").replace(/\sapplyFill="\w+"/, "").replace(/^<xf\b/, `<xf fillId="${fillId[color]}" applyFill="1"`);
+      newXfs.push(xf); return cache[k] = String(xfs.length + newXfs.length - 1);
+    };
+    styleFor.finish = () => {
+      if(!newXfs.length) return;
+      st = st.replace(/(<fills\b[^>]*?)(?:\scount="\d+")?(\s*\/?>)/, (a,b,c) => `${b} count="${nFills + newFills.length}"${c}`).replace(/<\/fills>/, newFills.join("") + "</fills>");
+      st = st.replace(/(<cellXfs\b[^>]*?)(?:\scount="\d+")?(\s*\/?>)/, (a,b,c) => `${b} count="${xfs.length + newXfs.length}"${c}`).replace(/<\/cellXfs>/, newXfs.join("") + "</cellXfs>");
+      stEntry.content = enc(st);
+    };
+  } else styleFor = s => s;
+
+  // 5) Ghi từng ô vào XML của sheet
+  let sx = dec(sheetEntry);
+  if(/<sheetData\b[^>]*\/>/.test(sx)) sx = sx.replace(/<sheetData\b([^>]*)\/>/, "<sheetData$1></sheetData>");
+  const sd = sx.match(/(<sheetData\b[^>]*>)([\s\S]*?)(<\/sheetData>)/);
+  if(!sd) throw new Error("cấu trúc sheet không đọc được");
+  const rows = (sd[2].match(/<row\b[^>]*?(?:\/>|>[\s\S]*?<\/row>)/g) || []).map(x => ({r: +((x.match(/^<row\b[^>]*?\sr="(\d+)"/)||[])[1]), xml: x}));
+  const byRow = new Map(rows.map(o => [o.r, o]));
+  const cellXml = (ref, sAttr, f, v) => {
+    if(v === "") return `<c r="${ref}"${sAttr}/>`;
+    if(f === "t"){ const n = v.replace(/[.\s,]/g, ""); if(/^-?\d+$/.test(n)) return `<c r="${ref}"${sAttr}><v>${n}</v></c>`; }
+    return `<c r="${ref}"${sAttr} t="inlineStr"><is><t xml:space="preserve">${xmlEsc(v)}</t></is></c>`;
+  };
+  const group = new Map(); writes.forEach(w => { if(!group.has(w.row)) group.set(w.row, []); group.get(w.row).push(w); });
+  let nCells = 0;
+  group.forEach((ws_, r) => {
+    let o = byRow.get(r);
+    if(!o){ o = {r, xml: `<row r="${r}"></row>`}; rows.push(o); byRow.set(r, o); }
+    let open = o.xml.match(/^<row\b[^>]*?(?=\/?>)/)[0].replace(/\sspans="[^"]*"/, "");
+    const inner = o.xml.endsWith("/>") && !/<\/row>$/.test(o.xml) ? "" : o.xml.replace(/^<row\b[^>]*>/, "").replace(/<\/row>$/, "");
+    const cells = (inner.match(/<c\b[^>]*?(?:\/>|>[\s\S]*?<\/c>)/g) || []).map(x => ({col: colToIdx((x.match(/^<c\b[^>]*?\sr="([A-Z]+)\d+"/)||[])[1] || "A"), xml: x}));
+    ws_.forEach(w => {
+      const ref = idxToCol(w.col) + r;
+      const old = cells.find(c => c.col === w.col);
+      const s0 = old ? ((old.xml.match(/^<c\b[^>]*?\ss="(\d+)"/)||[])[1] || "0") : "0";
+      const s1 = mark ? styleFor(s0, w.color) : s0;
+      const xml = cellXml(ref, s1 !== "0" ? ` s="${s1}"` : "", w.f, w.v);
+      if(old) old.xml = xml; else cells.push({col: w.col, xml});
+      nCells++;
+    });
+    cells.sort((a,b) => a.col - b.col);
+    o.xml = open + ">" + cells.map(c => c.xml).join("") + "</row>";
+  });
+  rows.sort((a,b) => a.r - b.r);
+  sx = sx.replace(sd[0], () => sd[1] + rows.map(o => o.xml).join("") + sd[3]);
+  sheetEntry.content = enc(sx);
+  if(styleFor.finish) styleFor.finish();
+
+  // 6) Đóng gói lại (bỏ mục giữ chỗ của thư viện)
+  const ph = z.FullPaths.findIndex(f => /Sh33tJ5/.test(f));
+  if(ph >= 0){ z.FullPaths.splice(ph, 1); z.FileIndex.splice(ph, 1); }
+  const out = C.write(z, {fileType:"zip", type:"array", compression:true});
+  return {out, rows: nRows, cells: nCells, miss};
+}
+
+function exportXlsx(bytes, fname){
+  try{
+    const res = patchXlsx(bytes, $("#expMark").checked);
+    const ext = (fname.match(/\.(xlsx|xlsm)$/i) || [, "xlsx"])[1];
+    const d = new Date(), p = n => String(n).padStart(2, "0");
+    const name = fname.replace(/\.(xlsx|xlsm)$/i, "") + `_da_duyet_${d.getFullYear()}${p(d.getMonth()+1)}${p(d.getDate())}_${p(d.getHours())}${p(d.getMinutes())}.${ext}`;
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(new Blob([res.out], {type:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"}));
+    a.download = name; document.body.appendChild(a); a.click();
+    setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 2000);
+    $("#expFileMsg").textContent = `Đã tạo ${name}: ghi ${res.rows} ý tưởng (${res.cells} ô).` + (res.miss.length ? ` ${res.miss.length} mã không có trong file: ${res.miss.slice(0,5).join(", ")}${res.miss.length>5?"…":""}` : "");
+    toast("Đã tải file Excel mới");
+  }catch(err){ $("#expFileMsg").textContent = "Không xuất được file: " + err.message; }
 }
 
 // ----- events -----
@@ -1115,6 +1293,14 @@ $("#opts").addEventListener("click", e => { const b = e.target.closest(".opt"); 
 $("#sText").addEventListener("input", e => { const rec=view[curIdx]; if(!rec) return; setEdit(rec,"s",e.target.value); $$("#opts .opt").forEach(b=>b.classList.remove("on")); refreshKeep(rec.key); });
 $("#uText").addEventListener("input", e => { const rec=view[curIdx]; if(!rec) return; setEdit(rec,"u",e.target.value); refreshKeep(rec.key); });
 $("#btnExport").addEventListener("click", () => EXCEL ? writeAllPending() : DIALOG ? resendAll() : openExport());
+$("#btnXlsx").addEventListener("click", () => {
+  if(!changedList().length){ $("#expFileMsg").textContent = "Chưa có kết quả nào thay đổi để ghi."; return; }
+  if(rawFile) exportXlsx(rawFile.bytes, rawFile.name); else $("#pickOrig").click();
+});
+$("#pickOrig").addEventListener("change", e => {
+  const f = e.target.files[0]; e.target.value = ""; if(!f) return;
+  f.arrayBuffer().then(b => exportXlsx(new Uint8Array(b), f.name));
+});
 $("#cpScript").addEventListener("click", async () => { const ok = await copyText(buildScript().code); toast(ok ? "Đã copy Office Script — dán vào Tự động hóa › Tập lệnh mới" : "Không copy được, hãy bôi đen khung code và Ctrl+C"); });
 $("#cpS").addEventListener("click", async () => { toast(await copyText(buildTSV("s")) ? `Đã copy cột ${settings.colS.toUpperCase()} (${model.allRows.length} dòng)` : "Không copy được"); });
 $("#cpT").addEventListener("click", async () => { toast(await copyText(buildTSV("t")) ? `Đã copy cột ${settings.colT.toUpperCase()} (${model.allRows.length} dòng)` : "Không copy được"); });
@@ -1179,10 +1365,9 @@ $("#sideL").addEventListener("click", () => move(-1));
 $("#sideR").addEventListener("click", () => move(1));
 $("#tbSel").addEventListener("change", e => { tbFilter = e.target.value; refresh(true); });
 function unitsOf(r){ return String(r.cells[model.dvCol] ?? "").split(/[,;\/\n]+/).map(x => norm(x).toUpperCase()).filter(Boolean); }
-$("#dvChips").addEventListener("click", e => {
-  const b = e.target.closest(".chip.dv"); if(!b) return;
-  dvFilter = b.dataset.dv;
-  $$("#dvChips .chip.dv").forEach(x => x.classList.toggle("on", x===b));
+$("#dvSel").addEventListener("change", e => {
+  dvFilter = e.target.value;
+  e.target.classList.toggle("on", !!dvFilter);
   refresh(true);
 });
 $("#tbChips").addEventListener("click", e => {
