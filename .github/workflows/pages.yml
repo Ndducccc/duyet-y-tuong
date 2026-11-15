@@ -1,0 +1,33 @@
+name: Deploy Pages
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+concurrency:
+  group: pages
+  cancel-in-progress: true
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.dep.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build site
+        run: |
+          mkdir -p _site/assets
+          cp index.html _site/
+          echo 'iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAACZklEQVR4XoVTzUtUURT/3fvuezNvirScZqEZLlykYKvAFFqEi2GM2ghtWkQaRBDt8i9oVQQlUW2cNu1cFAiTG1cuQvvQiEowiAjUIiIYnzPvvnfviXN1ppLEA+8tHuf3dc55AgD6y+VhqdRtMqYHRPxJ8Os/RRACwvM+2jS9MT86WhH9k5Ml6fvTQgjPas0Nu4G3iohkEAgiMjZJzkoIMSGk9IzWZi+wZHUhBPcyhrFSCNFt45jYwS62XbGxSGsYIibytjHdEtbuaZuV4zTFYGcnQqUciWO0ljjCP5l3DkBJiZ+1Gvo7OvCgVMKFvj5ESQKPYUII+bdt5kqtbXJ6UqKqNU60t+PW0BBWq1U8XV5Gzvdht7aFJgEr15MErWEIbQyUENjUGodzOUwUi450fHYWX6tV+FJiC75NwBnraYq+QgFTIyM439uLtShyZPeKRRzMZnFtZgaL6+tozQRNdS61vVpn90ethu9RhPGBAWxojaGuLvTm87g5N4eXq6toC7OILdBYF7sQJ8tl54Zd8HBaMhk8Gh5GTz7vFO4uLODhq9co7AuxYRVaUEOEwEX2YCH5sriRh7Lf953y1UoFb9bWML2ygsdLSyjksti0CsfpC56YOxg3z5pXqSCl2ydPifebVco5uVKpuCbeO8iiDt8RHKHPOAXgPpUoVqFQRPTJy2S6TRwb9z8Qwfc8vvnmhlMIHMAmpuSg+83e0dE0yrWpoPbrLUe4TtYaLwi8RhxOxfDG0ygBQhmn6X3umMok0TdY/5KcHxt7btP0HBF9gHRn8Ud6ZxHRIT+mkOrzJtZnXly+uPgbz5gblSOqxs4AAAAASUVORK5CYII=' | base64 -d > _site/assets/icon-16.png
+          echo 'iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAFDUlEQVR4Xr1XbWiVZRi+7ud53/O1aZtr+MlY/VBx5sTl1jaRwTFZf5YEWiCkkSYhEo4Kwx9rVERFvzL6sQ2lfgQWI/FHDoWGaF9+sLnGSKwkUGJrzqk757xfzxP3M1/ZPOdsE0/eMDh7D+e5rvu+r+t+3psAoK2tTbS3t6u6jo6FIhJpJSFalO+vgNbE3z9saMAXUl4UUh6/MzJyqH///ptbjx6V32zbFlCb1qKdSNV2dm6WkUiHsO0K5XnQvv+wuNNC2DbItvncIXdiYsf5PXvOMQmTYf3hw0kZj58KPA/KcQIiEiAqSPZTQmmtlRWPW0qpm5TJPPvjrl3naW1XV3lMiD6ScrFyXUVCyIKmfl9opQIZj0vlOP/oIFgrokRvylhsyaMA5+AEg0zGtxKJRZBytyBgq/I8TYI/PprgFgeuq0nr7RaInrgruEdGAIBgTJJypYDW+v/ImzVs/mY4XCulBbel0AQEEVzfR8b3oTjd/IYiJlDQsITAv6kUXqqqwntNTUi5Lhwudx4SViHRpRC45TioX7YMe9evR9yysCAWwwdnzmA4lYJFxFNx+oAqFAFJhNuOg8qSEnzW3GzAOXMms2XFCqQ8L2crCkLA9FwpLIjH8VEyiXmRCLwgQNSyMDA8jM6+PhRHIjwKs/KdE4EZRGQUzAez4D7ZtAkry8oMuC0l/hwbw76eHgRKmTNy2W1GAqE9Jlw3LwkWV9r38X5TE55evNiAh1o42NuLsXTaVCKf2/MSYHBfawPcWFGBOzlIsOJH02m8Ul2NluXL4StlnvFvWk+exG/Dw5gfjZoK5IucBExZAaQ9D283NODz5mZsW7UKN9JpA8AR2m376tV4o7bWgJtZT4QPz57Fz9euoSQWu/f8gQiARRUE+DiZxPN3Mzu4YQNeXrPGeDwqpbFb3dKleKu+3pSX+8ukuvr6cLi/H6VzADczOR8zrsLvo6OTWQGmjO80NmJHdTWujo/jydJSY7eYZZksbSFw/PJlHDp3DuWJxKyZh5FzEHFGLJwvLlwwAmNgJhBojQMNDYhIiWRl5T27seIHR0bw7unT5rsHuV7yTkI+pLyoCF9eumTIGhJaG8u11tWZZ0wqtNveEyeM+rkNod/ZeALcHr6UNIIcBZ9xFDPA44lEFolQcKx21kJot3lTFM+APiTSiEBCQUGgCJmsjs96FzDY/SRYpGGEdpuq+BA8AQevqlN4Sv+FHqrB92KdITM1ZiXAwSTKEgl8NTBgPr9eU4OxTMZU5tfr17PsxvQc2DgQdOMF3QsXxWjQg4Z3Nz2DeUiZihg7Z9UkT3A72FrfDg3hh6tX4QSBKT8PmrAlk47R8CCxEOPYqAdxCwvgQ6AYwHPqIr6TtdNeQYTWOpgrCRYXXyoTnmcE+Vg0mnXBsOAsBLiBYlyhJZiPcfN/BHfQR5UIIA1JDsbmOvQL2+Yn+efllGASfPXyD5lErpicpIRPRQt+oiqkYaFbNOFrsRFxOAhA6i5mv0XAMWHb6wLXnVxI5hCzvUQyeBwu/qBF2CdfQyluYxgliMKDxY7QYAKWct1jAkodCtLpK7yx8NIwB/w5RUgiAg/jKEKxqQODa5+xGJOxjZ/qjhypEZZ1iohKeGkgcKMKt5pxzzVo2mqmfH/TLzt3XhC8IPIHb2Jis9b6b6uoyCLbLuibMgtT2Lbgs7VSQ4zFmPeW03BVNut5NLpbK/UiAVV68op9aDIzref/AcjuiWZrVNISAAAAAElFTkSuQmCC' | base64 -d > _site/assets/icon-32.png
+          for n in 64 80; do (command -v convert >/dev/null && convert _site/assets/icon-32.png -filter Lanczos -resize ${n}x${n} _site/assets/icon-$n.png) || cp _site/assets/icon-32.png _site/assets/icon-$n.png; done
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+      - id: dep
+        uses: actions/deploy-pages@v4
