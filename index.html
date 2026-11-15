@@ -1,0 +1,1171 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Duyệt ý tưởng – Danh mục ý tưởng theo quý</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&family=Lexend:wght@500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
+<style>
+:root{
+  color-scheme:light;
+  --bg:#f9f9f9; --panel:#ffffff; --ink:#2b323b; --muted:#6b7076; --line:#e3e4e6;
+  --brand:#389e9e; --brand-d:#2a7f7f; --brand-2:#e9f5f5; --accent:#f39a1e;
+  --warn:#b8650d; --warn-bg:#fdf3e4;
+  --ok:#23806b; --ok-bg:#e4f4ef; --no:#b0343a; --no-bg:#fbeaea; --info:#2f5f8f; --info-bg:#eaf1f8;
+  --sel:#eef7f7; --radius:12px;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{font-family:"Be Vietnam Pro",system-ui,sans-serif;background:var(--bg);color:var(--ink);font-size:14px;line-height:1.55}
+h1,h2,h3,.dhead h2{font-family:"Lexend","Be Vietnam Pro",sans-serif;letter-spacing:-.01em}
+header{position:relative}
+header::after{content:"";position:absolute;left:0;right:0;bottom:-1px;height:3px;background:linear-gradient(90deg,var(--brand) 0 78%,var(--accent) 78% 100%)}
+header h1 b{color:var(--accent)}
+.drop{border-radius:28px 28px 28px 4px!important}
+.drop h2{color:var(--brand-d)}
+.way{border-radius:12px!important}
+.way b{font-family:"Lexend",sans-serif;font-weight:600}
+.pill,.chip{border-width:1px;border-style:solid}
+.pill.empty{border-color:#d5d6d8}
+.pill.ok{border-color:#bfe2d8}.pill.no{border-color:#efc6c8}.pill.mid{border-color:#f3d7ad}.pill.info{border-color:#c9d9ea}
+.item .code{color:var(--brand-d)!important}
+.f.key{border-left:3px solid var(--brand)!important}
+.review{border-top:3px solid var(--brand)!important}
+.btn.primary{border-radius:999px!important;padding:6px 16px!important;font-weight:600}
+button{font:inherit;cursor:pointer;color:var(--ink)}
+input,textarea,select{font:inherit;color:var(--ink);background:#fff}
+.btn.primary,.chip.on,.opt.on{color:#fff}
+.app{display:grid;grid-template-rows:auto 1fr;height:100vh}
+header{display:flex;align-items:center;gap:12px;padding:10px 16px;background:var(--panel);border-bottom:1px solid var(--line);flex-wrap:wrap}
+header h1{font-size:16px;margin:0;font-weight:700;color:var(--brand);white-space:nowrap}
+header .src{font-size:12px;color:var(--muted);max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.spacer{flex:1}
+.btn{border:1px solid var(--line);background:#fff;border-radius:8px;padding:6px 12px;font-weight:500}
+.btn:hover{border-color:#b9c1bb;background:#fafbf9}
+.btn.primary{background:var(--brand);border-color:var(--brand);color:#fff}
+.btn.primary:hover{background:var(--brand-d)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+select.btn{padding:6px 8px}
+.progress{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted)}
+.bar{width:140px;height:6px;background:var(--line);border-radius:3px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--brand);width:0}
+
+/* landing */
+.landing{display:grid;place-items:center;padding:24px;overflow:auto}
+.drop{width:min(720px,100%);background:var(--panel);border:2px dashed #b9c6bf;border-radius:16px;padding:36px 32px;text-align:center}
+.drop.over{border-color:var(--brand);background:var(--brand-2)}
+.drop h2{margin:0 0 6px;font-size:20px}
+.drop p{margin:4px 0;color:var(--muted)}
+.ways{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:24px 0 8px;text-align:left}
+.way{border:1px solid var(--line);border-radius:10px;padding:12px;background:#fbfcfb}
+.way b{display:block;margin-bottom:4px;color:var(--brand)}
+.way span{font-size:12.5px;color:var(--muted)}
+kbd{font-family:inherit;font-size:11.5px;border:1px solid var(--line);border-bottom-width:2px;border-radius:4px;padding:0 5px;background:#fff}
+.err{color:var(--no);margin-top:12px;font-weight:500}
+
+/* main */
+.main{display:grid;grid-template-columns:360px 1fr;min-height:0}
+.list{display:flex;flex-direction:column;border-right:1px solid var(--line);background:var(--panel);min-height:0}
+.filters{padding:10px;border-bottom:1px solid var(--line);display:flex;flex-direction:column;gap:8px}
+.filters input{width:100%;border:1px solid var(--line);border-radius:8px;padding:7px 10px}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chip{border:1px solid var(--line);background:#fff;border-radius:999px;padding:3px 10px;font-size:12.5px}
+.chip.on{background:var(--brand);border-color:var(--brand);color:#fff}
+.items{overflow:auto;flex:1}
+.item{padding:9px 12px;border-bottom:1px solid #eef0ed;cursor:pointer;display:grid;grid-template-columns:1fr auto;gap:2px 8px}
+.item:hover{background:#f7f9f7}
+.item.st-ok{background:#eef8f1;box-shadow:inset 4px 0 0 #2e9a5a}
+.item.st-no{background:#fdf3f3;box-shadow:inset 4px 0 0 #d26a6e}
+.item.cur{background:#e3f3f3!important;box-shadow:inset 0 0 0 2px var(--brand),inset 6px 0 0 var(--brand)!important}
+.item.cur.st-ok{background:#ddf2e4!important}
+.item.cur .name{font-weight:600}
+.pill.ok{background:#2e9a5a!important;color:#fff!important;border-color:#2e9a5a!important}
+.tbsel{width:100%;border:1px solid var(--line);border-radius:8px;padding:6px 8px;background:#fff}
+.detail-wrap{position:relative;min-height:0;display:flex}
+.detail-wrap .detail{flex:1}
+.sidenav{position:absolute;top:38%;z-index:5;width:36px;height:72px;border-radius:12px;border:1px solid var(--line);background:rgba(255,255,255,.92);font-size:26px;line-height:1;color:var(--brand-d);box-shadow:0 2px 10px rgba(0,0,0,.06);display:flex;align-items:center;justify-content:center}
+.sidenav:hover{background:var(--brand);color:#fff;border-color:var(--brand)}
+.sidenav:disabled{opacity:.3;pointer-events:none}
+.sidenav.l{left:6px}.sidenav.r{right:18px}
+.review ::placeholder{color:#b3b8bd;font-weight:400;opacity:1}
+.item .code{font-size:11.5px;color:var(--muted);font-weight:600}
+.item .name{grid-column:1/-1;font-weight:500;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.pill{font-size:11px;border-radius:999px;padding:1px 8px;font-weight:600;white-space:nowrap;align-self:start}
+.pill.empty{background:#eef0ed;color:var(--muted)}
+.pill.ok{background:var(--ok-bg);color:var(--ok)}
+.pill.no{background:var(--no-bg);color:var(--no)}
+.pill.mid{background:var(--warn-bg);color:var(--warn)}
+.pill.info{background:var(--info-bg);color:var(--info)}
+.dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--warn);margin-left:6px;vertical-align:middle}
+
+.detail{overflow:auto;min-height:0;display:flex;flex-direction:column}
+.detail-inner{padding:18px 64px 40px 52px;width:100%}
+.dhead{display:flex;align-items:flex-start;gap:12px;margin-bottom:14px}
+.dhead .code{font-size:12px;color:var(--muted);font-weight:600}
+.dhead h2{margin:2px 0 0;font-size:19px;line-height:1.35}
+.nav{display:flex;gap:6px;margin-left:auto;flex-shrink:0}
+.fields{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px}
+.f{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:10px 12px}
+.f.wide{grid-column:1/-1}
+/* Bố cục chi tiết co giãn: màn hình rộng chia 2 cột (nội dung dài | thông tin ngắn) */
+.dgrid{display:grid;grid-template-columns:1fr;gap:12px;align-items:start}
+.dgrid .side{order:-1}
+.dgrid .mainc{display:flex;flex-direction:column;gap:10px;min-width:0}
+.dgrid .side.fields{grid-template-columns:repeat(auto-fill,minmax(200px,1fr))}
+@media (min-width:1400px){
+  .dgrid{grid-template-columns:minmax(0,1fr) clamp(340px,30%,560px);gap:16px}
+  .dgrid .side{order:0;position:sticky;top:0}
+  .dgrid .side.fields{grid-template-columns:1fr 1fr}
+  .dgrid .side .f.wide{grid-column:1/-1}
+  .f .v{font-size:1.02em}
+}
+@media (min-width:2100px){ .dgrid{grid-template-columns:minmax(0,1fr) clamp(420px,32%,680px)} .dgrid .side.fields{grid-template-columns:1fr 1fr 1fr} }
+.zoom{display:flex;align-items:center;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:#fff}
+.zoom button{border:0;background:none;padding:5px 9px;font-weight:600}
+.zoom button:hover{background:var(--brand-2)}
+.zoom span{font-size:12px;min-width:42px;text-align:center;color:var(--muted)}
+.f.key{border-color:#bcd7cc;background:#fbfdfc}
+.f label{display:block;font-size:11.5px;font-weight:600;color:var(--muted);text-transform:none;margin-bottom:3px}
+.f .v{white-space:pre-wrap;word-break:break-word}
+.f .v.em{color:#a5aca8;font-style:italic}
+.toggle{font-size:12.5px;color:var(--muted);display:flex;align-items:center;gap:6px;margin:12px 0 0}
+
+.review{position:sticky;bottom:0;background:var(--panel);border-top:1px solid var(--line);box-shadow:0 -6px 16px rgba(0,0,0,.04);padding:12px 22px;margin-top:auto}
+.review-grid{display:grid;grid-template-columns:1.25fr .55fr 1fr;gap:16px}
+.review input.money{width:100%;border:1px solid var(--line);border-radius:8px;padding:7px 10px;font-weight:600;font-variant-numeric:tabular-nums}
+.review input.money:focus{outline:2px solid #9bc9b7;border-color:var(--brand)}
+.review h3{margin:0 0 6px;font-size:12.5px;color:var(--muted);font-weight:600}
+.opts{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:6px}
+.opt{border:1px solid var(--line);background:#fff;border-radius:8px;padding:5px 10px;font-size:13px}
+.opt.on{background:var(--brand);border-color:var(--brand);color:#fff}
+.opt small{opacity:.6;margin-left:4px}
+.review textarea{width:100%;border:1px solid var(--line);border-radius:8px;padding:7px 10px;resize:vertical;min-height:58px}
+.review textarea:focus,.filters input:focus{outline:2px solid #9bc9b7;outline-offset:0;border-color:var(--brand)}
+.orig{font-size:11.5px;color:var(--muted);margin-top:3px}
+.orig b{color:var(--warn)}
+
+/* modal */
+.modal-bg{position:fixed;inset:0;background:rgba(20,30,25,.35);display:none;align-items:center;justify-content:center;z-index:20;padding:20px}
+.modal-bg.show{display:flex}
+.modal{background:#fff;border-radius:14px;width:min(760px,100%);max-height:90vh;overflow:auto;padding:20px 22px}
+.modal h2{margin:0 0 4px;font-size:18px}
+.modal p.sub{margin:0 0 14px;color:var(--muted)}
+.card{border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:12px}
+.card h3{margin:0 0 6px;font-size:15px}
+.card ol{margin:6px 0 10px;padding-left:20px;color:#3d4642}
+.card .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.form{display:grid;grid-template-columns:180px 1fr;gap:10px 12px;align-items:center}
+.form input{border:1px solid var(--line);border-radius:8px;padding:6px 10px;width:100%}
+.form .hint{grid-column:2;font-size:12px;color:var(--muted);margin-top:-6px}
+.toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:#1d2421;color:#fff;padding:9px 16px;border-radius:9px;font-size:13px;opacity:0;transition:opacity .2s;pointer-events:none;z-index:30;max-width:90vw}
+.toast.show{opacity:1}
+.empty-state{padding:40px;color:var(--muted);text-align:center}
+pre.code{background:#f6f7f5;border:1px solid var(--line);border-radius:8px;padding:10px;font-size:11.5px;max-height:160px;overflow:auto;white-space:pre}
+.hidden{display:none!important}
+.menu-btn{display:none;padding:4px 10px}
+.savest{font-size:12px;color:var(--muted);white-space:nowrap}
+.savest.ok{color:var(--ok)}.savest.err{color:var(--no);font-weight:600}
+.backdrop{display:none}
+/* Khung vừa (add-in Excel kéo rộng ~760–1100px): danh sách thu gọn chỉ còn Mã số */
+@media (min-width:761px) and (max-width:1100px){
+  .main{grid-template-columns:150px 1fr!important}
+  .filters{padding:6px}
+  .filters input,.tbsel{font-size:12px;padding:5px 6px}
+  .chips{gap:4px}
+  .chip{font-size:11px;padding:2px 7px}
+  .item{grid-template-columns:1fr;padding:7px 8px 7px 12px}
+  .item .name,.item .pill{display:none}
+  .item .code{font-size:12.5px}
+  .item.cur .code{font-weight:700}
+  .detail-inner{padding:12px 46px 30px 40px}
+  .sidenav.l{left:4px}.sidenav.r{right:10px}
+}
+.tbchips{padding-bottom:6px;border-bottom:1px dashed var(--line)}
+.tbchips .lbl{font-size:11px;color:var(--muted);align-self:center;margin-right:2px}
+.chip.tb.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.conf{color:var(--warn);font-weight:500}
+.mini{border:1px solid var(--line);background:#fff;border-radius:6px;padding:0 6px;margin-left:4px;font-size:11.5px}
+.mini:hover{border-color:var(--brand);color:var(--brand-d)}
+.dhead .stt{display:inline-block;background:var(--brand-2);color:var(--brand-d);border-radius:999px;padding:0 8px;font-weight:600;margin-left:4px}
+/* Khung hẹp (task pane trong Excel) */
+@media (max-width:760px){
+  header{padding:8px 10px;gap:6px}
+  header h1{font-size:14px}
+  header .src{display:none}
+  .menu-btn{display:inline-block}
+  .progress .bar{width:60px}
+  #btnSettings{padding:6px 8px}
+  .main{grid-template-columns:1fr!important}
+  .list{position:fixed;left:0;top:0;bottom:0;width:min(340px,90vw);z-index:15;transform:translateX(-105%);transition:transform .2s;box-shadow:4px 0 18px rgba(0,0,0,.15);max-height:none!important}
+  body.list-open .list{transform:none}
+  body.list-open .backdrop{display:block;position:fixed;inset:0;background:rgba(20,30,25,.25);z-index:14}
+  .detail-inner{padding:12px 40px 40px 40px}
+  .dhead .nav{display:none}
+  .dhead h2{font-size:16px}
+  .fields{grid-template-columns:1fr}
+  .sidenav{width:28px;height:56px;font-size:22px}
+  .sidenav.l{left:4px}.sidenav.r{right:8px}
+  .review{padding:8px 10px}
+  .review-grid{grid-template-columns:1fr 110px!important;gap:8px}
+  .review-grid>div:first-child{grid-column:1/-1}
+  .review-grid>div:last-child{grid-column:1/-1}
+  .review textarea{min-height:40px}
+  #uText{min-height:44px;height:44px}
+}
+@media (max-width:900px){.main{grid-template-columns:1fr}.list{max-height:40vh}.ways{grid-template-columns:1fr}.review-grid{grid-template-columns:1fr}}
+@media (max-width:1200px) and (min-width:901px){.review-grid{grid-template-columns:1fr .6fr}.review-grid>div:last-child{grid-column:1/-1}}
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <button class="btn menu-btn" id="btnList" title="Danh sách ý tưởng">☰</button>
+    <h1>Duyệt ý tưởng<b>.</b></h1>
+    <span class="src" id="srcLabel"></span>
+    <select class="btn hidden" id="sheetSel" title="Chọn sheet"></select>
+    <div class="spacer"></div>
+    <div class="progress hidden" id="progWrap"><div class="bar"><i id="progBar"></i></div><span id="progTxt"></span></div>
+    <span class="savest hidden" id="saveSt"></span>
+    <button class="btn hidden" id="btnReload" title="Đọc lại dữ liệu từ sheet">↻ Làm mới</button>
+    <button class="btn hidden" id="btnBig" title="Mở tool trong cửa sổ lớn, vẫn ghi thẳng vào Excel">⤢ Mở cửa sổ lớn</button>
+    <button class="btn hidden" id="btnNew" title="Nạp dữ liệu khác">Nạp dữ liệu</button>
+    <div class="zoom" title="Cỡ chữ / độ phóng (Ctrl + / Ctrl −)"><button id="zOut">A−</button><span id="zVal">100%</span><button id="zIn">A+</button></div>
+    <button class="btn" id="btnSettings">Cài đặt</button>
+    <button class="btn primary hidden" id="btnExport">Ghi kết quả về Excel</button>
+  </header>
+
+  <!-- Landing -->
+  <section class="landing" id="landing">
+    <div class="drop" id="drop">
+      <h2>Nạp danh mục ý tưởng</h2>
+      <p>Dán bảng copy từ Excel Online, hoặc thả file <b>.xlsx</b> vào đây.</p>
+      <div class="ways">
+        <div class="way"><b>1 · Dán từ Excel Online</b><span>Chọn cả sheet (bấm ô góc trên trái), <kbd>Ctrl</kbd>+<kbd>C</kbd>, quay lại trang này nhấn <kbd>Ctrl</kbd>+<kbd>V</kbd>. Nhớ bỏ lọc trước khi copy.</span></div>
+        <div class="way"><b>2 · Kéo thả file</b><span>Kéo file từ thư mục OneDrive đồng bộ hoặc file vừa tải về rồi thả vào khung này. Chọn được sheet theo quý.</span></div>
+        <div class="way"><b>3 · Chọn file</b><span><label class="btn" style="display:inline-block;margin-top:4px">Chọn file .xlsx…<input type="file" id="fileIn" accept=".xlsx,.xlsm,.xls" hidden></label></span></div>
+      </div>
+      <div class="err" id="loadErr"></div>
+    </div>
+  </section>
+
+  <!-- Main -->
+  <section class="main hidden" id="main">
+    <aside class="list">
+      <div class="filters">
+        <input id="q" placeholder="Tìm mã số, tên, tác giả, nội dung…  ( / )">
+        <select class="tbsel hidden" id="tbSel" title="Lọc theo Tiểu ban"></select>
+        <div class="chips tbchips hidden" id="tbChips" title="Lọc theo Tiểu ban đánh giá"></div>
+        <div class="chips" id="chips">
+          <button class="chip on" data-f="all">Tất cả <span></span></button>
+          <button class="chip" data-f="todo">Chưa duyệt <span></span></button>
+          <button class="chip" data-f="done">Đã có KQ <span></span></button>
+          <button class="chip" data-f="changed">Đã sửa <span></span></button>
+        </div>
+      </div>
+      <div class="items" id="items"></div>
+    </aside>
+    <div class="detail-wrap">
+    <button class="sidenav l" id="sideL" title="Ý tưởng trước (↑ / ←)">‹</button>
+    <button class="sidenav r" id="sideR" title="Ý tưởng sau (↓ / →)">›</button>
+    <div class="detail" id="detail">
+      <div class="detail-inner" id="dInner"></div>
+      <div class="review" id="review">
+        <div class="review-grid">
+          <div>
+            <h3 id="sLabel">Cột S · Kết quả duyệt</h3>
+            <div class="opts" id="opts"></div>
+            <textarea id="sText" rows="2" placeholder="Hoặc gõ kết quả khác…"></textarea>
+            <div class="orig" id="sOrig"></div>
+          </div>
+          <div>
+            <h3 id="tLabel">Cột T · Thưởng (VNĐ)</h3>
+            <input class="money" id="tText" inputmode="numeric" placeholder="Để trống = không thưởng">
+            <div class="orig" id="tOrig"></div>
+          </div>
+          <div>
+            <h3 id="uLabel">Cột U · Ghi chú (chỉ ghi khi có nội dung)</h3>
+            <textarea id="uText" rows="4" placeholder="Ghi chú cho ý tưởng này…"></textarea>
+            <div class="orig" id="uOrig"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    </div>
+  </section>
+</div>
+
+<!-- Export modal -->
+<div class="modal-bg" id="mExport">
+  <div class="modal">
+    <h2>Ghi kết quả về Excel</h2>
+    <p class="sub" id="expSummary"></p>
+    <div class="card">
+      <h3>Cách A · Office Script (khuyên dùng)</h3>
+      <ol>
+        <li>Bấm <b>Copy script</b> bên dưới.</li>
+        <li>Trong Excel Online: tab <b>Tự động hóa</b> → <b>Tập lệnh mới</b>, xoá code mẫu, dán vào.</li>
+        <li>Bấm <b>Chạy</b>. Script tìm từng dòng theo <b>Mã số</b> trên sheet <b id="expSheet"></b> rồi ghi cột <b class="cS">S</b> (Phê duyệt), cột <b class="cT">T</b> (Thưởng); cột <b class="cU">U</b> chỉ ghi khi có ghi chú. Định dạng file giữ nguyên.</li>
+      </ol>
+      <div class="row"><button class="btn primary" id="cpScript">Copy script</button><span class="orig" id="expMiss"></span></div>
+      <pre class="code" id="scriptPrev"></pre>
+    </div>
+    <div class="card">
+      <h3>Cách B · Dán tay theo cột</h3>
+      <ol>
+        <li>Bỏ lọc/sắp xếp trên sheet để thứ tự dòng giống lúc nạp.</li>
+        <li>Bấm Copy cột, chọn ô <b id="tsvStartS"></b> (hoặc <b id="tsvStartU"></b>) rồi <kbd>Ctrl</kbd>+<kbd>V</kbd>.</li>
+      </ol>
+      <div class="row"><button class="btn" id="cpS">Copy cột S</button><button class="btn" id="cpT">Copy cột T</button><button class="btn" id="cpU">Copy cột U</button><span class="orig" id="tsvWarn"></span></div>
+    </div>
+    <div class="row" style="justify-content:flex-end;display:flex"><button class="btn" data-close>Đóng</button></div>
+  </div>
+</div>
+
+<!-- Settings modal -->
+<div class="modal-bg" id="mSettings">
+  <div class="modal">
+    <h2>Cài đặt</h2>
+    <p class="sub">Lưu trong trình duyệt này.</p>
+    <div class="form">
+      <label>Lựa chọn nhanh cột S</label><input id="setOpts">
+      <div class="hint">Cách nhau bằng dấu <b>;</b> — phím tắt 1, 2, 3… theo thứ tự.</div>
+      <label>Cột kết quả duyệt</label><input id="setS" maxlength="3">
+      <label>Cột thưởng</label><input id="setT" maxlength="3">
+      <label>Thưởng mặc định</label><input id="setReward">
+      <div class="hint">Tự điền khi chọn lựa chọn đầu tiên (Cho nghiên cứu/áp dụng); chọn “Không công nhận” thì xoá thưởng.</div>
+      <label>Cột ghi chú</label><input id="setU" maxlength="3">
+      <label>Khi dán: ô đầu tiên</label><input id="setOrigin" placeholder="A1">
+      <div class="hint">Ô góc trên trái của vùng đã copy. Chọn cả sheet thì là A1.</div>
+    </div>
+    <div class="row" style="justify-content:flex-end;display:flex;gap:8px;margin-top:16px">
+      <button class="btn" id="btnClear">Xoá các chỉnh sửa của sheet này</button>
+      <button class="btn" data-close>Huỷ</button>
+      <button class="btn primary" id="saveSettings">Lưu</button>
+    </div>
+  </div>
+</div>
+<div class="backdrop" id="backdrop"></div>
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+"use strict";
+const $ = s => document.querySelector(s);
+const $$ = s => Array.from(document.querySelectorAll(s));
+const store = {
+  get(k, d){ try{ const v = localStorage.getItem(k); return v==null ? d : JSON.parse(v); }catch(e){ return d; } },
+  set(k, v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){} }
+};
+
+const DEFAULT_OPTS = ["Cho nghiên cứu/áp dụng","Không công nhận"];
+let settings = Object.assign({opts: DEFAULT_OPTS, colS:"S", colT:"T", colU:"U", reward:"500.000", origin:"A1"}, store.get("ytq.settings.v2", {}));
+
+// ----- state -----
+let source = null;      // {kind:'file'|'paste', name, sheets:{name: grid}, origins:{name:{r,c}}}
+let sheetName = "";
+let model = null;       // {headers, headerRow, startRow, startCol, maCol, sCol, uCol, rows:[...], allRows:[...]}
+let edits = {};         // key -> {s, u}
+let filter = "all", query = "", curIdx = -1, view = [], tbFilter = "";
+let showEmpty = false;
+
+// ----- helpers -----
+const norm = v => String(v==null?"":v).replace(/\s+/g," ").trim();
+const low = v => norm(v).toLowerCase();
+function colToIdx(L){ L = String(L).toUpperCase().replace(/[^A-Z]/g,""); let n=0; for(const ch of L) n = n*26 + (ch.charCodeAt(0)-64); return n-1; }
+function idxToCol(i){ let s=""; i++; while(i>0){ const m=(i-1)%26; s=String.fromCharCode(65+m)+s; i=Math.floor((i-1)/26);} return s; }
+function parseCell(a){ const m = String(a||"A1").toUpperCase().match(/^([A-Z]+)(\d+)$/); return m ? {c:colToIdx(m[1]), r:parseInt(m[2],10)-1} : {c:0,r:0}; }
+function esc(s){ return String(s).replace(/[&<>"]/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c])); }
+function toast(msg){ const t=$("#toast"); t.textContent=msg; t.classList.add("show"); clearTimeout(t._h); t._h=setTimeout(()=>t.classList.remove("show"),2400); }
+function pillClass(v){ const l=low(v); if(!l) return "empty"; if(/không|từ chối|loại/.test(l)) return "no"; if(/nghiên cứu|áp dụng|đồng ý|duyệt|thông qua|đạt/.test(l)) return "ok"; if(/bổ sung|làm rõ|xem xét/.test(l)) return "mid"; return "info"; }
+async function copyText(txt){
+  try{ await navigator.clipboard.writeText(txt); return true; }
+  catch(e){
+    const ta=document.createElement("textarea"); ta.value=txt; ta.style.position="fixed"; ta.style.opacity="0"; document.body.appendChild(ta); ta.select();
+    let ok=false; try{ ok=document.execCommand("copy"); }catch(_){} ta.remove(); return ok;
+  }
+}
+
+// ----- loading -----
+function loadFile(file){
+  $("#loadErr").textContent = "";
+  if(typeof XLSX === "undefined"){ $("#loadErr").textContent = "Không tải được thư viện đọc Excel. Hãy dùng cách dán từ Excel Online."; return; }
+  const rd = new FileReader();
+  rd.onload = e => {
+    try{
+      const wb = XLSX.read(new Uint8Array(e.target.result), {type:"array"});
+      const sheets = {}, origins = {};
+      wb.SheetNames.forEach(n => {
+        const ws = wb.Sheets[n]; if(!ws || !ws["!ref"]) return;
+        const rg = XLSX.utils.decode_range(ws["!ref"]);
+        sheets[n] = XLSX.utils.sheet_to_json(ws, {header:1, defval:"", raw:false, blankrows:true});
+        origins[n] = {r:rg.s.r, c:rg.s.c};
+      });
+      const names = Object.keys(sheets);
+      if(!names.length) throw new Error("File không có sheet dữ liệu.");
+      source = {kind:"file", name:file.name, sheets, origins};
+      // prefer first sheet that has "Mã số"
+      const first = names.find(n => findHeader(sheets[n]).row >= 0) || names[0];
+      openSheet(first);
+    }catch(err){ $("#loadErr").textContent = "Không đọc được file: " + err.message; }
+  };
+  rd.readAsArrayBuffer(file);
+}
+
+function parseHtmlTable(html){
+  const doc = new DOMParser().parseFromString(html, "text/html");
+  const table = doc.querySelector("table"); if(!table) return null;
+  const grid = []; const span = {}; // rowspan carry: key "r,c"
+  Array.from(table.rows).forEach((tr, r) => {
+    const row = grid[r] = grid[r] || [];
+    let c = 0;
+    Array.from(tr.cells).forEach(td => {
+      while(row[c] !== undefined) c++;
+      td.querySelectorAll("br").forEach(b => b.replaceWith("\n"));
+      const txt = (td.textContent||"").replace(/ /g," ").replace(/[ \t]+\n/g,"\n").trim();
+      const cs = parseInt(td.getAttribute("colspan")||"1",10)||1;
+      const rs = parseInt(td.getAttribute("rowspan")||"1",10)||1;
+      for(let i=0;i<cs;i++){
+        for(let j=0;j<rs;j++){
+          const rr = grid[r+j] = grid[r+j] || [];
+          rr[c+i] = (i===0 && j===0) ? txt : "";
+        }
+      }
+      c += cs;
+    });
+  });
+  const w = Math.max(...grid.map(r=>r.length));
+  return grid.map(r => { const o=[]; for(let i=0;i<w;i++) o.push(r[i]===undefined?"":r[i]); return o; });
+}
+function parseTSV(t){
+  const rows=[]; let row=[], cell="", q=false;
+  for(let i=0;i<t.length;i++){
+    const ch=t[i];
+    if(q){ if(ch==='"'){ if(t[i+1]==='"'){cell+='"';i++;} else q=false; } else cell+=ch; }
+    else if(ch==='"' && cell==="") q=true;
+    else if(ch==="\t"){ row.push(cell); cell=""; }
+    else if(ch==="\n"){ row.push(cell.replace(/\r$/,"")); rows.push(row); row=[]; cell=""; }
+    else cell+=ch;
+  }
+  if(cell!=="" || row.length){ row.push(cell); rows.push(row); }
+  return rows;
+}
+function loadPaste(e){
+  const html = e.clipboardData.getData("text/html");
+  const text = e.clipboardData.getData("text/plain");
+  let grid = html ? parseHtmlTable(html) : null;
+  if(!grid || grid.length < 2) grid = text ? parseTSV(text) : null;
+  if(!grid || grid.length < 2){ toast("Không nhận được bảng. Hãy copy vùng ô trong Excel rồi dán lại."); return; }
+  if(findHeader(grid).row < 0){ toast("Không thấy cột “Mã số” trong vùng đã dán. Hãy copy cả dòng tiêu đề."); return; }
+  const o = parseCell(settings.origin);
+  source = {kind:"paste", name:"Dữ liệu dán từ Excel", sheets:{"(Đã dán)":grid}, origins:{"(Đã dán)":o}};
+  openSheet("(Đã dán)");
+  toast("Đã nạp " + model.rows.length + " ý tưởng từ clipboard");
+}
+
+// ----- phiên làm việc: lưu dữ liệu đã nạp để mở lại trang vẫn còn -----
+function saveSession(){
+  if(!source) return;
+  const one = {kind:source.kind, name:source.name, sheetName, sheets:{}, origins:{}};
+  one.sheets[sheetName] = source.sheets[sheetName]; one.origins[sheetName] = source.origins[sheetName];
+  let all = Object.assign({}, one, {sheets:source.sheets, origins:source.origins});
+  try{ localStorage.setItem("ytq.session", JSON.stringify(all)); }
+  catch(e){ try{ localStorage.setItem("ytq.session", JSON.stringify(one)); }catch(_){} }
+}
+function restoreSession(){
+  const ss = store.get("ytq.session", null);
+  if(!ss || !ss.sheets || !ss.sheets[ss.sheetName]) return false;
+  source = {kind:ss.kind, name:ss.name, sheets:ss.sheets, origins:ss.origins};
+  openSheet(ss.sheetName);
+  toast("Đã mở lại dữ liệu và kết quả duyệt của lần trước");
+  return true;
+}
+
+// ===== Chế độ add-in Excel =====
+let EXCEL = false, lastSel = "";
+const pending = {};   // "key|field" -> timer
+function setSave(msg, cls){ const e=$("#saveSt"); e.textContent=msg; e.className="savest " + (cls||""); }
+async function startExcel(){
+  EXCEL = true;
+  document.body.classList.add("excel");
+  $("#landing").classList.add("hidden");
+  try{
+    let names = [], active = "";
+    await Excel.run(async ctx => {
+      const wss = ctx.workbook.worksheets; wss.load("items/name,items/visibility");
+      const a = wss.getActiveWorksheet(); a.load("name");
+      await ctx.sync();
+      names = wss.items.filter(w => w.visibility === "Visible").map(w => w.name); active = a.name;
+    });
+    source = {kind:"excel", name:"Excel", sheets:{}, origins:{}, allNames:names};
+    await loadFromExcel(active);
+  }catch(err){ showExcelErr(err); }
+}
+function showExcelErr(err){
+  $("#main").classList.add("hidden"); $("#landing").classList.remove("hidden");
+  $("#drop").innerHTML = `<h2>Không đọc được dữ liệu từ Excel</h2><p class="err">${esc(err && err.message || err)}</p>`;
+}
+async function loadFromExcel(name, keepPos){
+  const keepKey = keepPos && view[curIdx] ? view[curIdx].key : "";
+  setSave("Đang đọc sheet…");
+  try{
+    await Excel.run(async ctx => {
+      const ws = ctx.workbook.worksheets.getItem(name);
+      const ur = ws.getUsedRange(true);
+      ur.load("text,rowIndex,columnIndex");
+      await ctx.sync();
+      source.sheets = {}; source.origins = {};
+      source.sheets[name] = ur.text; source.origins[name] = {r:ur.rowIndex, c:ur.columnIndex};
+    });
+    openSheet(name);
+    if(keepKey){ const i = view.findIndex(r => r.key===keepKey); if(i>=0){ curIdx=i; renderList(); renderDetail(); } }
+    const n = Object.keys(edits).length;
+    setSave(n ? `${n} mục chưa lưu` : "Đã đồng bộ với Excel", n ? "err" : "ok");
+    watchSheet(name);
+  }catch(err){ setSave("Lỗi đọc sheet", "err"); toast("Không đọc được sheet: " + (err.message||err)); }
+}
+function selectInExcel(rec){
+  Excel.run(async ctx => {
+    const ws = ctx.workbook.worksheets.getItem(sheetName);
+    ws.getCell(rec.sheetRow-1, model.org.c + model.maCol).select();
+    await ctx.sync();
+  }).catch(()=>{});
+}
+function scheduleWrite(rec, field){
+  const k = rec.key + "|" + field;
+  clearTimeout(pending[k]);
+  setSave("Đang chờ lưu…");
+  delete conflicts[k];
+  pending[k] = setTimeout(() => { delete pending[k]; if(conflicts[k]) return; writeField(rec, field); }, field==="s" ? 50 : 700);
+}
+function excelValue(field, v){
+  v = String(v==null?"":v);
+  if(field==="t"){ const raw=norm(v); if(!raw) return ""; const num = Number(raw.replace(/[.\s]/g,"").replace(",", ".")); return isFinite(num) ? num : raw; }
+  return v;
+}
+async function writeField(rec, field){
+  const e = edits[rec.key]; if(!e || e[field]===undefined) return;
+  const val = e[field];
+  const colIdx = field==="s" ? model.sCol : field==="t" ? model.tCol : model.uCol;
+  if(colIdx < 0){ setSave("Không tìm thấy cột để ghi", "err"); return; }
+  try{
+    await Excel.run(async ctx => {
+      const ws = ctx.workbook.worksheets.getItem(sheetName);
+      // Kiểm tra dòng vẫn đúng Mã số (phòng khi bảng bị sắp xếp/chèn dòng)
+      let row = rec.sheetRow;
+      if(rec.ma){
+        const chk = ws.getCell(row-1, model.org.c + model.maCol); chk.load("text"); await ctx.sync();
+        if(norm(chk.text) !== rec.ma){
+          const ur = ws.getUsedRange(true); ur.load("text,rowIndex"); await ctx.sync();
+          const i = ur.text.findIndex(r => norm(r[model.org.c + model.maCol - (ur.columnIndex||0)])===rec.ma);
+          if(i < 0) throw new Error("Không tìm thấy mã " + rec.ma + " trên sheet");
+          row = ur.rowIndex + i + 1; rec.sheetRow = row;
+        }
+      }
+      const cell = ws.getCell(row-1, model.org.c + colIdx);
+      selfWrites[idxToCol(model.org.c + colIdx) + row] = Date.now();
+      cell.values = [[excelValue(field, val)]];
+      cell.load("text"); await ctx.sync();
+      rec[field+"0"] = field==="t" ? cell.text : String(val);
+    });
+    toDialog({type:"saved", key:rec.key, field, val, display:rec[field+"0"]});
+    const ee = edits[rec.key];
+    if(ee && ee[field]===val){ delete ee[field]; if(!isChanged(rec)) delete edits[rec.key]; saveEdits(); }
+    const n = Object.keys(edits).length;
+    setSave(n ? `${n} mục chưa lưu` : "✓ Đã lưu vào Excel", n ? "err" : "ok");
+    const k = rec.key; refresh(false); const i = view.findIndex(r=>r.key===k); if(i>=0 && i!==curIdx){ curIdx=i; renderList(); renderDetail(); }
+  }catch(err){
+    setSave("Chưa lưu được – bấm Ghi lại", "err");
+    toDialog({type:"err", msg:String(err.message||err)});
+    toast("Lỗi ghi Excel: " + (err.message||err));
+    refresh(false);
+  }
+}
+// ===== Cửa sổ lớn (Office dialog) =====
+// Khung add-in mở cửa sổ lớn; cửa sổ lớn hiển thị/duyệt, gửi chỉnh sửa về khung add-in để ghi vào Excel.
+const DIALOG = (() => { try{ return new URLSearchParams(location.search).get("mode") === "dialog"; }catch(e){ return false; } })();
+let dlg = null;
+const inbox = {};
+function packSend(fn, obj){
+  const str = JSON.stringify(obj), N = 20000, id = Math.random().toString(36).slice(2), n = Math.max(1, Math.ceil(str.length / N));
+  for(let i=0;i<n;i++) fn(JSON.stringify({c:id, i, n, s:str.slice(i*N, (i+1)*N)}));
+}
+function unpack(raw, cb){
+  let m; try{ m = JSON.parse(raw); }catch(e){ return; }
+  const b = inbox[m.c] = inbox[m.c] || {parts:[], got:0};
+  if(b.parts[m.i] === undefined){ b.parts[m.i] = m.s; b.got++; }
+  if(b.got === m.n){ delete inbox[m.c]; try{ cb(JSON.parse(b.parts.join(""))); }catch(e){} }
+}
+function toDialog(obj){ if(!dlg) return; try{ packSend(s => dlg.messageChild(s), obj); }catch(e){} }
+function toParent(obj){ try{ packSend(s => Office.context.ui.messageParent(s), obj); }catch(e){ toast("Không gửi được về khung add-in"); } }
+// --- phía khung add-in ---
+function openBig(){
+  const url = location.href.split(/[?#]/)[0] + "?mode=dialog";
+  const open = inIframe => Office.context.ui.displayDialogAsync(url, {height:94, width:96, displayInIframe:inIframe}, res => {
+    if(res.status !== Office.AsyncResultStatus.Succeeded){
+      if(inIframe) return open(false);
+      toast("Không mở được cửa sổ lớn: " + (res.error && res.error.message || "")); return;
+    }
+    dlg = res.value;
+    $("#btnBig").textContent = "⤢ Cửa sổ lớn đang mở";
+    dlg.addEventHandler(Office.EventType.DialogMessageReceived, a => unpack(a.message, onDialogMsg));
+    dlg.addEventHandler(Office.EventType.DialogEventReceived, () => { dlg = null; $("#btnBig").textContent = "⤢ Mở cửa sổ lớn"; refresh(false); });
+  });
+  open(true);
+}
+function pushData(){
+  const cur = view[curIdx];
+  toDialog({type:"data", sheetName, names:source.allNames, grid:source.sheets[sheetName], origin:source.origins[sheetName], edits, curKey: cur ? cur.key : store.get("ytq.lastKey","")});
+}
+async function onDialogMsg(m){
+  if(m.type === "ready") pushData();
+  else if(m.type === "edit"){
+    const rec = model.rows.find(r => r.key === m.key); if(!rec) return;
+    const e = edits[rec.key] = edits[rec.key] || {}; e[m.field] = m.val; saveEdits();
+    await writeField(rec, m.field);
+  }
+  else if(m.type === "sheet"){ await loadFromExcel(m.name); pushData(); }
+  else if(m.type === "reload"){ await loadFromExcel(sheetName, true); pushData(); }
+  else if(m.type === "select"){ const rec = model.rows.find(r => r.key === m.key); if(rec){ store.set("ytq.lastKey", rec.key); selectInExcel(rec); } }
+  else if(m.type === "close"){ try{ dlg.close(); }catch(e){} dlg = null; $("#btnBig").textContent = "⤢ Mở cửa sổ lớn"; const k = m.key; refresh(false); }
+}
+// --- phía cửa sổ lớn ---
+const sendTimers = {};
+function startDialog(){
+  $("#landing").classList.add("hidden");
+  $("#btnBig").textContent = "✕ Đóng cửa sổ lớn";
+  setSave("Đang nhận dữ liệu…");
+  Office.context.ui.addHandlerAsync(Office.EventType.DialogParentMessageReceived, a => unpack(a.message, onParentMsg), () => toParent({type:"ready"}));
+}
+function scheduleSend(rec, field){
+  const k = rec.key + "|" + field;
+  clearTimeout(sendTimers[k]); setSave("Đang chờ lưu…");
+  sendTimers[k] = setTimeout(() => { delete sendTimers[k]; const e = edits[rec.key]; if(e && e[field] !== undefined) toParent({type:"edit", key:rec.key, field, val:e[field]}); }, field==="s" ? 30 : 700);
+}
+function resendAll(){ for(const r of model.rows) for(const f of FIELDS) if(diff(r,f)) toParent({type:"edit", key:r.key, field:f, val:edits[r.key][f]}); }
+function onParentMsg(m){
+  if(m.type === "data"){
+    source = {kind:"excel", name:"Excel", sheets:{}, origins:{}, allNames:m.names};
+    source.sheets[m.sheetName] = m.grid; source.origins[m.sheetName] = m.origin;
+    openSheet(m.sheetName);
+    edits = m.edits || {};
+    refresh(false);
+    const i = view.findIndex(r => r.key === m.curKey); if(i >= 0){ curIdx = i; renderList(); renderDetail(); }
+    const n = Object.keys(edits).length; setSave(n ? `${n} mục chưa lưu` : "Đã đồng bộ với Excel", n ? "err" : "ok");
+  } else if(m.type === "saved"){
+    const rec = model.rows.find(r => r.key === m.key); if(!rec) return;
+    rec[m.field+"0"] = m.display;
+    const e = edits[rec.key]; if(e && e[m.field] === m.val){ delete e[m.field]; if(!isChanged(rec)) delete edits[rec.key]; }
+    const n = Object.keys(edits).length; setSave(n ? `${n} mục chưa lưu` : "✓ Đã lưu vào Excel", n ? "err" : "ok");
+    const k = rec.key; refresh(false); const i = view.findIndex(r => r.key === k); if(i >= 0 && i !== curIdx){ curIdx = i; renderList(); renderDetail(); }
+  } else if(m.type === "err"){ setSave("Chưa lưu được – bấm Ghi lại", "err"); toast("Lỗi ghi Excel: " + m.msg); }
+  else if(m.type === "patch"){ m.cells.forEach(c => applyCell(c.row, c.col, c.text)); keepRefresh(); if(m.note) toast(m.note); }
+}
+// ===== Đồng bộ ngược: người khác sửa trên Excel -> add-in tự cập nhật =====
+const selfWrites = {};      // "S233" -> thời điểm tool tự ghi (để bỏ qua sự kiện của chính mình)
+const conflicts = {};       // "key|field" -> {remote}
+let watchHandle = null, reloadTimer = null;
+function keepRefresh(){
+  const k = view[curIdx] && view[curIdx].key; refresh(false);
+  const i = view.findIndex(r => r.key === k); if(i >= 0){ curIdx = i; renderList(); renderDetail(); }
+}
+function applyCell(row, colAbs, text){
+  // trả về {rec, field, before} nếu ô thuộc cột S/T/U của một ý tưởng
+  if(!model || !model.rows) return null;
+  const rec = model.rows.find(r => r.sheetRow === row); if(!rec) return null;
+  const ci = colAbs - model.org.c; if(ci < 0) return null;
+  rec.cells[ci] = text;
+  const field = ci === model.sCol ? "s" : ci === model.tCol ? "t" : ci === model.uCol ? "u" : "";
+  if(field){ const before = rec[field+"0"]; rec[field+"0"] = text; return {rec, field, before}; }
+  return {rec, field:"", before:null};
+}
+async function watchSheet(name){
+  try{
+    if(watchHandle){ const h = watchHandle; watchHandle = null; await Excel.run(h.context, async c => { h.remove(); await c.sync(); }).catch(()=>{}); }
+    await Excel.run(async ctx => {
+      const ws = ctx.workbook.worksheets.getItem(name);
+      watchHandle = ws.onChanged.add(onSheetChanged);
+      await ctx.sync();
+    });
+  }catch(e){ /* phiên bản Excel cũ không hỗ trợ sự kiện -> vẫn dùng nút Làm mới */ }
+}
+function scheduleReload(){
+  clearTimeout(reloadTimer);
+  reloadTimer = setTimeout(async () => { await loadFromExcel(sheetName, true); pushData(); toast("Bảng trên Excel vừa thay đổi cấu trúc – đã đọc lại"); }, 800);
+}
+function parseAddr(a){
+  const m = String(a).replace(/\$/g,"").split("!").pop().match(/^([A-Z]+)(\d+)(?::([A-Z]+)(\d+))?$/i);
+  if(!m) return null;
+  return {c1:colToIdx(m[1]), r1:+m[2], c2:colToIdx(m[3]||m[1]), r2:+(m[4]||m[2])};
+}
+async function onSheetChanged(ev){
+  try{
+    if(ev.changeType && ev.changeType !== "RangeEdited"){ scheduleReload(); return; }
+    const a = parseAddr(ev.address); if(!a) return;
+    // bỏ qua ô do chính tool vừa ghi
+    if(a.r1 === a.r2 && a.c1 === a.c2){
+      const t = selfWrites[idxToCol(a.c1) + a.r1];
+      if(t && Date.now() - t < 5000 && ev.source !== "Remote"){ delete selfWrites[idxToCol(a.c1) + a.r1]; return; }
+    }
+    const nCells = (a.r2 - a.r1 + 1) * (a.c2 - a.c1 + 1);
+    const headerRowAbs = model.org.r + model.headerRow + 1;
+    if(nCells > 400 || a.r1 <= headerRowAbs || (a.c1 <= model.org.c + model.maCol && a.c2 >= model.org.c + model.maCol)){ scheduleReload(); return; }
+    let texts = [];
+    await Excel.run(async ctx => {
+      const r = ctx.workbook.worksheets.getItem(sheetName).getRange(ev.address.split("!").pop());
+      r.load("text"); await ctx.sync(); texts = r.text;
+    });
+    const patch = [], notes = [];
+    const label = {s:"Phê duyệt", t:"Thưởng", u:"Ghi chú"};
+    for(let i=0;i<texts.length;i++) for(let j=0;j<texts[i].length;j++){
+      const row = a.r1 + i, col = a.c1 + j, text = String(texts[i][j]);
+      const res = applyCell(row, col, text); if(!res) continue;
+      patch.push({row, col, text});
+      if(res.field && res.before !== text){
+        const k = res.rec.key + "|" + res.field, e = edits[res.rec.key];
+        if(e && e[res.field] !== undefined && e[res.field] !== text){ conflicts[k] = {remote:text}; clearTimeout(pending[k]); delete pending[k]; }
+        notes.push(`${res.rec.ma || "Dòng " + row}: ${label[res.field]} → “${text || "(trống)"}”`);
+      }
+    }
+    if(!patch.length) return;
+    keepRefresh();
+    const note = notes.length ? (ev.source === "Remote" ? "Người khác vừa sửa – " : "Excel vừa sửa – ") + notes.slice(0,2).join("; ") + (notes.length > 2 ? ` (+${notes.length-2})` : "") : "";
+    if(note) toast(note);
+    toDialog({type:"patch", cells:patch, note});
+  }catch(e){ scheduleReload(); }
+}
+async function writeAllPending(){
+  for(const r of model.rows) for(const f of FIELDS) if(diff(r,f)) await writeField(r, f);
+}
+
+function findHeader(grid){
+  for(let r=0; r<Math.min(grid.length, 40); r++){
+    const row = grid[r]||[];
+    for(let c=0;c<row.length;c++){ const t=low(row[c]); if(t==="mã số" || t.startsWith("mã số")) return {row:r, col:c}; }
+  }
+  return {row:-1, col:-1};
+}
+
+function openSheet(name){
+  sheetName = name;
+  const grid = source.sheets[name], org = source.origins[name];
+  const h = findHeader(grid);
+  if(h.row < 0){
+    model = {headers:[], rows:[], allRows:[], err:true};
+  } else {
+    const headers = (grid[h.row]||[]).map((v,i) => norm(v) || ("Cột " + idxToCol(org.c+i)));
+    const findCol = re => headers.findIndex(x => re.test(x.toLowerCase()));
+    // Tìm cột theo tên tiêu đề trước; không thấy thì mới dùng chữ cái cột
+    let sCol = findCol(/phê duyệt/), uCol = findCol(/^ghi chú/), tCol = findCol(/^thưởng/);
+    if(tCol < 0) tCol = colToIdx(settings.colT) - org.c;
+    if(sCol < 0) sCol = colToIdx(settings.colS) - org.c;
+    if(uCol < 0) uCol = colToIdx(settings.colU) - org.c;
+    const nameCol = findCol(/^tên ý tưởng|tên ý tưởng/);
+    const sttCol = headers.findIndex(x => /^(stt|tt|số tt|số thứ tự)$/i.test(x.trim()));
+    let tbCol = findCol(/^tiểu ban/);
+    if(tbCol < 0){ const p = colToIdx("P") - org.c; if(p>=0 && p<headers.length && /tiểu ban/i.test(headers[p])) tbCol = p; }
+    const rows = [], allRows = [];
+    for(let r=h.row+1; r<grid.length; r++){
+      const cells = grid[r]||[];
+      const sheetRow = org.r + r + 1;
+      const rec = {sheetRow, cells, ma:norm(cells[h.col]), name:norm(cells[nameCol]),
+                   s0: sCol>=0 ? String(cells[sCol]??"") : "", u0: uCol>=0 ? String(cells[uCol]??"") : "", t0: tCol>=0 ? String(cells[tCol]??"") : ""};
+      allRows.push(rec);
+      const hasData = cells.some(v => norm(v));
+      if(hasData && (rec.ma || rec.name)){ rec.key = rec.ma || ("row" + sheetRow); rows.push(rec); }
+    }
+    // trim trailing empty rows
+    while(allRows.length && !allRows[allRows.length-1].cells.some(v=>norm(v))) allRows.pop();
+    model = {headers, headerRow:h.row, maCol:h.col, nameCol, sttCol, tbCol, sCol, tCol, uCol, org, rows, allRows};
+  }
+  edits = store.get(editKey(), {});
+  // sheet selector
+  const sel = $("#sheetSel");
+  const names = source.allNames || Object.keys(source.sheets);
+  sel.innerHTML = names.map(n => `<option ${n===name?"selected":""}>${esc(n)}</option>`).join("");
+  sel.classList.toggle("hidden", names.length < 2);
+  $("#srcLabel").textContent = source.name + (names.length<2 ? " · " + name : "");
+  $("#srcLabel").title = $("#srcLabel").textContent;
+  ["#btnNew","#btnExport","#progWrap"].forEach(s => $(s).classList.remove("hidden"));
+  if(EXCEL || DIALOG){ ["#btnNew"].forEach(s => $(s).classList.add("hidden")); ["#btnReload","#saveSt","#btnBig"].forEach(s => $(s).classList.remove("hidden")); $("#srcLabel").textContent = DIALOG ? "Cửa sổ lớn · ghi trực tiếp vào Excel" : "Đang làm việc trực tiếp trên Excel"; }
+  $("#landing").classList.add("hidden"); $("#main").classList.remove("hidden");
+  $("#sLabel").textContent = `Cột ${settings.colS.toUpperCase()} · Phê duyệt của Ban KHKT&SK`;
+  $("#tLabel").textContent = `Cột ${settings.colT.toUpperCase()} · Thưởng (VNĐ)`;
+  $("#uLabel").textContent = `Cột ${settings.colU.toUpperCase()} · Ghi chú` + (EXCEL ? "" : " (chỉ ghi khi có nội dung)");
+  if((EXCEL || DIALOG) && model.headers.length){
+    const L = i => i>=0 ? idxToCol(model.org.c + i) : "?";
+    $("#sLabel").textContent = `Cột ${L(model.sCol)} · Phê duyệt của Ban KHKT&SK`;
+    $("#tLabel").textContent = `Cột ${L(model.tCol)} · Thưởng (VNĐ)`;
+    $("#uLabel").textContent = `Cột ${L(model.uCol)} · Ghi chú`;
+  }
+  // bộ lọc Tiểu ban: chỉ hiện khi có từ 2 tiểu ban trở lên
+  tbFilter = "";
+  const tbs = {};
+  if(model.tbCol >= 0) model.rows.forEach(r => { const v = norm(r.cells[model.tbCol]); if(v) tbs[v] = (tbs[v]||0) + 1; });
+  const tbNames = Object.keys(tbs).sort((a,b)=>a.localeCompare(b,"vi"));
+  const tbSel = $("#tbSel");
+  tbSel.innerHTML = `<option value="">Tiểu ban: tất cả (${model.rows.length||0})</option>` + tbNames.map(n => `<option value="${esc(n)}">Tiểu ban ${esc(n)} (${tbs[n]})</option>`).join("");
+  tbSel.classList.add("hidden");   // thay bằng các nút lọc bên dưới
+  const tbBox = $("#tbChips");
+  tbBox.innerHTML = `<span class="lbl">Tiểu ban:</span><button class="chip tb on" data-tb="">Tất cả</button>` +
+    tbNames.map(n => `<button class="chip tb" data-tb="${esc(n)}">${esc(n)} <span>${tbs[n]}</span></button>`).join("");
+  tbBox.classList.toggle("hidden", tbNames.length < 2);
+  if(!EXCEL) saveSession();
+  curIdx = -1; renderOpts(); refresh(true);
+  const lastKey = store.get("ytq.lastKey", "");
+  const li = view.findIndex(r => r.key===lastKey);
+  if(li > 0){ curIdx = li; renderList(); renderDetail(); }
+  if(model.err) $("#dInner").innerHTML = `<div class="empty-state">Sheet “${esc(name)}” không có cột “Mã số”. Hãy chọn sheet khác.</div>`;
+}
+function editKey(){ return "ytq.edits." + (source.kind==="file" ? source.name + "::" : source.kind==="excel" ? "excel::" : "paste::") + sheetName; }
+function saveEdits(){ if(DIALOG) return; store.set(editKey(), edits); }
+
+// ----- values -----
+function curS(rec){ const e=edits[rec.key]; return e && e.s!==undefined ? e.s : rec.s0; }
+function curU(rec){ const e=edits[rec.key]; return e && e.u!==undefined ? e.u : rec.u0; }
+function curT(rec){ const e=edits[rec.key]; return e && e.t!==undefined ? e.t : rec.t0; }
+const FIELDS = ["s","t","u"];
+function diff(rec, f){ const e=edits[rec.key]; return !!e && e[f]!==undefined && e[f]!==rec[f+"0"]; }
+function isChanged(rec){ return FIELDS.some(f => diff(rec,f)); }
+function setEdit(rec, field, val){
+  const e = edits[rec.key] = edits[rec.key] || {};
+  e[field] = val;
+  if(!isChanged(rec)) delete edits[rec.key];
+  saveEdits();
+  if(EXCEL) scheduleWrite(rec, field);
+  if(DIALOG) scheduleSend(rec, field);
+}
+
+// ----- render -----
+function refresh(resetSel){
+  const rows = model.rows || [];
+  const q = low(query);
+  const counts = {all:rows.length, todo:0, done:0, changed:0};
+  rows.forEach(r => { if(norm(curS(r))) counts.done++; else counts.todo++; if(isChanged(r)) counts.changed++; });
+  view = rows.filter(r => {
+    if(filter==="todo" && norm(curS(r))) return false;
+    if(filter==="done" && !norm(curS(r))) return false;
+    if(filter==="changed" && !isChanged(r)) return false;
+    if(tbFilter && model.tbCol>=0 && norm(r.cells[model.tbCol])!==tbFilter) return false;
+    if(q && !r.cells.join(" ").toLowerCase().includes(q) && !curU(r).toLowerCase().includes(q)) return false;
+    return true;
+  });
+  $$("#chips .chip").forEach(c => { c.classList.toggle("on", c.dataset.f===filter); c.querySelector("span").textContent = counts[c.dataset.f]; });
+  const pct = rows.length ? Math.round(counts.done*100/rows.length) : 0;
+  $("#progBar").style.width = pct + "%";
+  $("#progTxt").textContent = `${counts.done}/${rows.length} có kết quả · ${counts.changed} đã sửa`;
+  $("#btnExport").textContent = counts.changed ? `Ghi kết quả về Excel (${counts.changed})` : "Ghi kết quả về Excel";
+  if(EXCEL || DIALOG){ $("#btnExport").textContent = `Ghi lại ${counts.changed} mục chưa lưu`; $("#btnExport").classList.toggle("hidden", !counts.changed); }
+  if(resetSel || curIdx >= view.length) curIdx = view.length ? 0 : -1;
+  renderList(); renderDetail();
+}
+function renderList(){
+  const box = $("#items");
+  if(!view.length){ box.innerHTML = `<div class="empty-state">Không có ý tưởng phù hợp.</div>`; return; }
+  box.innerHTML = view.map((r,i) => {
+    const s = norm(curS(r));
+    const st = pillClass(s);
+    return `<div class="item ${i===curIdx?"cur":""} ${st==="ok"?"st-ok":st==="no"?"st-no":""}" data-i="${i}" title="${esc((r.ma?r.ma+" — ":"")+(r.name||""))}${s?" ["+esc(s)+"]":""}">
+      <span class="code">${esc(r.ma || "Dòng "+r.sheetRow)}${isChanged(r)?'<span class="dot" title="Đã sửa, chưa ghi về Excel"></span>':""}</span>
+      <span class="pill ${pillClass(s)}">${esc(s ? (s.length>18? s.slice(0,17)+"…" : s) : "Chưa duyệt")}</span>
+      <span class="name">${esc(r.name || "(không có tên)")}</span></div>`;
+  }).join("");
+  const cur = box.querySelector(".item.cur"); if(cur) cur.scrollIntoView({block:"center"});
+}
+function renderDetail(){
+  const rec = view[curIdx];
+  const rv = $("#review");
+  if(!rec){ $("#dInner").innerHTML = model.err ? $("#dInner").innerHTML : `<div class="empty-state">Chọn một ý tưởng ở danh sách bên trái.</div>`; rv.classList.add("hidden"); return; }
+  rv.classList.remove("hidden");
+  const H = model.headers;
+  const skip = new Set([model.maCol, model.nameCol, model.sttCol, model.sCol, model.tCol, model.uCol]);
+  const isKey = h => /nội dung|tiểu ban|ý kiến|mục tiêu|lợi ích|hiện trạng|giải pháp/i.test(h);
+  const isWide = (h,v) => isKey(h) || String(v).length > 140;
+  let html = "", side = "", emptyN = 0;
+  H.forEach((h,i) => {
+    if(skip.has(i)) return;
+    const v = rec.cells[i];
+    if(!norm(v)){ if(/^Cột [A-Z]+$/.test(h)) return; emptyN++; if(!showEmpty) return; }
+    const box = `<div class="f ${isWide(h,v)?"wide":""} ${isKey(h)?"key":""}"><label>${esc(h)}</label><div class="v ${norm(v)?"":"em"}">${norm(v)?esc(String(v).trim()):"(trống)"}</div></div>`;
+    // Nội dung dài/chính -> cột trái; thông tin ngắn (tác giả, đơn vị, tiểu ban, đánh giá…) -> cột phải
+    if(isWide(h,v) && !/^tiểu ban/i.test(h)) html += box; else side += box.replace(' wide', String(v).length > 60 ? ' wide' : '');
+  });
+  $("#dInner").innerHTML = `
+    <div class="dhead">
+      <div><div class="code">${esc(rec.ma||"")}${model.sttCol>=0 && norm(rec.cells[model.sttCol]) ? ` <span class="stt">Stt ${esc(norm(rec.cells[model.sttCol]))}</span>` : ""} · Dòng ${rec.sheetRow} · ${curIdx+1}/${view.length}</div><h2>${esc(rec.name||"(không có tên)")}</h2></div>
+      <div class="nav"><button class="btn" id="prev" title="Trước (K / ↑)">‹ Trước</button><button class="btn" id="next" title="Sau (J / ↓)">Sau ›</button></div>
+    </div>
+    <div class="dgrid"><div class="mainc">${html}</div><div class="side fields">${side}</div></div>
+    ${emptyN ? `<label class="toggle"><input type="checkbox" id="showEmpty" ${showEmpty?"checked":""}> Hiện ${emptyN} trường trống</label>` : ""}`;
+  $("#prev").onclick = () => move(-1); $("#next").onclick = () => move(1);
+  $("#sideL").disabled = curIdx <= 0; $("#sideR").disabled = curIdx >= view.length-1;
+  store.set("ytq.lastKey", rec.key);
+  if(EXCEL && settings.follow !== false && lastSel !== rec.key){ lastSel = rec.key; selectInExcel(rec); }
+  if(DIALOG && lastSel !== rec.key){ lastSel = rec.key; toParent({type:"select", key:rec.key}); }
+  const se = $("#showEmpty"); if(se) se.onchange = () => { showEmpty = se.checked; renderDetail(); };
+  // review panel
+  const s = curS(rec), u = curU(rec);
+  $$("#opts .opt").forEach(b => b.classList.toggle("on", norm(b.dataset.v)===norm(s)));
+  const sT = $("#sText"), uT = $("#uText");
+  if(document.activeElement !== sT) sT.value = settings.opts.some(o=>norm(o)===norm(s)) ? "" : s;
+  if(document.activeElement !== uT) uT.value = u;
+  const t = curT(rec), tT = $("#tText");
+  if(document.activeElement !== tT) tT.value = t;
+  $("#tOrig").innerHTML = rec.t0 !== t ? `Trong file: <b>${esc(rec.t0||"(trống)")}</b>` : "";
+  $("#sOrig").innerHTML = rec.s0 !== s ? `Trong file: <b>${esc(rec.s0||"(trống)")}</b>` : (rec.s0 ? "Giá trị đang có trong file" : "");
+  $("#uOrig").innerHTML = rec.u0 !== u ? `Trong file: <b>${esc(rec.u0||"(trống)")}</b>` : "";
+  ["s","t","u"].forEach(f => {
+    const c = conflicts[rec.key + "|" + f]; if(!c) return;
+    $("#" + f + "Orig").innerHTML = `<span class="conf">⚠ Excel vừa đổi thành <b>${esc(c.remote||"(trống)")}</b>
+      <button class="mini" data-cf="${f}" data-act="mine">Giữ của tôi</button><button class="mini" data-cf="${f}" data-act="excel">Lấy bản Excel</button></span>`;
+  });
+}
+function renderOpts(){
+  $("#opts").innerHTML = settings.opts.map((o,i) => `<button class="opt" data-v="${esc(o)}">${esc(o)}<small>${i<9?i+1:""}</small></button>`).join("")
+    + `<button class="opt" data-v="" title="Xoá kết quả (0)">Xoá<small>0</small></button>`;
+}
+function move(d){
+  if(!view.length) return;
+  curIdx = Math.max(0, Math.min(view.length-1, curIdx + d));
+  renderList(); renderDetail();
+}
+function pickS(val){
+  const rec = view[curIdx]; if(!rec) return;
+  setEdit(rec, "s", val);
+  const l = low(val);
+  if(/không công nhận/.test(l)) setEdit(rec, "t", "");
+  else if(/nghiên cứu|áp dụng/.test(l) && !norm(curT(rec))) setEdit(rec, "t", settings.reward);
+  const keepKey = rec.key;
+  refreshKeep(keepKey);
+}
+function refreshKeep(key){
+  // re-filter but keep the same record selected if still visible
+  refresh(false);
+  const i = view.findIndex(r => r.key===key);
+  if(i>=0){ curIdx = i; renderList(); renderDetail(); }
+}
+
+// ----- export -----
+function changedList(){ return (model.rows||[]).filter(isChanged); }
+function buildScript(){
+  const data = changedList().map(r => {
+    const e = edits[r.key], o = {ma: r.ma};
+    if(e.s!==undefined && e.s!==r.s0) o.s = e.s;
+    if(e.u!==undefined && e.u!==r.u0 && norm(e.u)) o.u = e.u;
+    if(e.t!==undefined && e.t!==r.t0) o.t = e.t;
+    return o;
+  }).filter(o => o.ma && (o.s!==undefined || o.u!==undefined || o.t!==undefined));
+  const sheet = source.kind==="file" ? sheetName : "";
+  return {count:data.length, code:
+`// Ghi kết quả duyệt ý tưởng — tạo lúc ${new Date().toLocaleString("vi-VN")}
+// Tìm dòng theo "Mã số", ghi cột ${settings.colS.toUpperCase()} (kết quả) và cột ${settings.colU.toUpperCase()} (chỉ khi có ghi chú).
+function main(workbook: ExcelScript.Workbook) {
+  const SHEET_NAME: string = ${JSON.stringify(sheet)}; // để trống = sheet đang mở
+  const COL_S: string = ${JSON.stringify(settings.colS.toUpperCase())};
+  const COL_T: string = ${JSON.stringify(settings.colT.toUpperCase())};
+  const COL_U: string = ${JSON.stringify(settings.colU.toUpperCase())};
+  const DATA: { ma: string, s?: string, t?: string, u?: string }[] = ${JSON.stringify(data, null, 1).replace(/\n\s*/g," ")};
+
+  let ws = SHEET_NAME ? workbook.getWorksheet(SHEET_NAME) : undefined;
+  if (!ws) ws = workbook.getActiveWorksheet();
+  const used = ws.getUsedRange();
+  if (!used) { console.log("Sheet trống."); return; }
+  const vals = used.getValues();
+  const r0 = used.getRowIndex(), c0 = used.getColumnIndex();
+  let hdr = -1, maCol = -1;
+  for (let r = 0; r < Math.min(vals.length, 40) && hdr < 0; r++) {
+    for (let c = 0; c < vals[r].length; c++) {
+      const t = clean(vals[r][c]).toLowerCase();
+      if (t === "mã số" || t.startsWith("mã số")) { hdr = r; maCol = c; break; }
+    }
+  }
+  if (hdr < 0) { console.log("Không tìm thấy cột 'Mã số' trên sheet " + ws.getName()); return; }
+  const rowOf = new Map<string, number>();
+  for (let r = hdr + 1; r < vals.length; r++) {
+    const k = clean(vals[r][maCol]);
+    if (k && !rowOf.has(k)) rowOf.set(k, r0 + r + 1);
+  }
+  // Ưu tiên tìm cột theo tiêu đề; không thấy thì dùng chữ cái cột cố định
+  let sIdx = -1, uIdx = -1, tIdx = -1;
+  for (let c = 0; c < vals[hdr].length; c++) {
+    const t = clean(vals[hdr][c]).toLowerCase();
+    if (sIdx < 0 && t.indexOf("phê duyệt") >= 0) sIdx = c;
+    if (uIdx < 0 && t.startsWith("ghi chú")) uIdx = c;
+    if (tIdx < 0 && t.startsWith("thưởng")) tIdx = c;
+  }
+  const colS = sIdx >= 0 ? letter(c0 + sIdx) : COL_S;
+  const colU = uIdx >= 0 ? letter(c0 + uIdx) : COL_U;
+  const colT = tIdx >= 0 ? letter(c0 + tIdx) : COL_T;
+  let nS = 0, nU = 0, nT = 0;
+  const miss: string[] = [];
+  for (const d of DATA) {
+    const row = rowOf.get(clean(d.ma));
+    if (!row) { miss.push(d.ma); continue; }
+    if (d.s !== undefined) { ws.getRange(colS + row).setValue(d.s); nS++; }
+    if (d.t !== undefined) {
+      const raw = clean(d.t);
+      const num = Number(raw.replace(/[.\s]/g, "").replace(",", "."));
+      ws.getRange(colT + row).setValue(raw === "" ? "" : (isFinite(num) ? num : raw)); nT++;
+    }
+    if (d.u !== undefined && clean(d.u) !== "") { ws.getRange(colU + row).setValue(d.u); nU++; }
+  }
+  console.log("Sheet " + ws.getName() + ": ghi " + nS + " ô cột " + colS + " (Phê duyệt), " + nT + " ô cột " + colT + " (Thưởng), " + nU + " ô cột " + colU + " (Ghi chú).");
+  if (miss.length) console.log("Không tìm thấy mã: " + miss.join(", "));
+}
+function letter(i: number): string {
+  let s = ""; i++;
+  while (i > 0) { const m = (i - 1) % 26; s = String.fromCharCode(65 + m) + s; i = Math.floor((i - 1) / 26); }
+  return s;
+}
+function clean(v: string | number | boolean): string {
+  return String(v === null || v === undefined ? "" : v).replace(/\\s+/g, " ").trim();
+}
+`};
+}
+function tsvCell(v){ v = String(v==null?"":v); return /[\t\n"]/.test(v) ? '"' + v.replace(/"/g,'""') + '"' : v; }
+function buildTSV(field){
+  const byRow = new Map((model.rows||[]).map(r => [r.sheetRow, r]));
+  return model.allRows.map(a => {
+    const r = byRow.get(a.sheetRow);
+    const v = r ? (field==="s" ? curS(r) : field==="t" ? curT(r) : curU(r)) : a[field+"0"];
+    return tsvCell(field==="t" ? String(v).replace(/[.\s]/g,"") : v);
+  }).join("\r\n");
+}
+function openExport(){
+  const ch = changedList();
+  const noMa = ch.filter(r => !r.ma).length;
+  const sc = buildScript();
+  $("#expSummary").textContent = ch.length ? `${ch.length} ý tưởng có thay đổi so với file.` : "Chưa có thay đổi nào so với file — script sẽ không ghi gì.";
+  $("#expSheet").textContent = source.kind==="file" ? `“${sheetName}”` : "đang mở";
+  $$(".cS").forEach(e=>e.textContent=settings.colS.toUpperCase()); $$(".cU").forEach(e=>e.textContent=settings.colU.toUpperCase()); $$(".cT").forEach(e=>e.textContent=settings.colT.toUpperCase());
+  $("#expMiss").textContent = noMa ? `${noMa} dòng không có Mã số sẽ bị bỏ qua — dùng cách B cho các dòng này.` : "";
+  $("#scriptPrev").textContent = sc.code;
+  const first = model.allRows[0];
+  $("#tsvStartS").textContent = settings.colS.toUpperCase() + (first?first.sheetRow:"");
+  $("#tsvStartU").textContent = settings.colU.toUpperCase() + (first?first.sheetRow:"");
+  $("#tsvWarn").textContent = source.kind==="paste" ? `Vị trí giả định vùng dán bắt đầu từ ô ${settings.origin.toUpperCase()} (đổi trong Cài đặt).` : "";
+  $("#mExport").classList.add("show");
+}
+
+// ----- events -----
+const drop = $("#drop");
+["dragenter","dragover"].forEach(ev => document.addEventListener(ev, e => { e.preventDefault(); drop.classList.add("over"); }));
+["dragleave","drop"].forEach(ev => document.addEventListener(ev, e => { e.preventDefault(); if(ev==="drop"||e.target===drop) drop.classList.remove("over"); }));
+document.addEventListener("drop", e => {
+  const f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+  if(f){ loadFile(f); return; }
+  const url = e.dataTransfer && (e.dataTransfer.getData("text/uri-list") || e.dataTransfer.getData("text/plain"));
+  if(url) toast("Đây là đường link, không phải file. Hãy copy bảng trong Excel Online rồi dán (Ctrl+V).");
+});
+$("#fileIn").addEventListener("change", e => { if(e.target.files[0]) loadFile(e.target.files[0]); e.target.value=""; });
+document.addEventListener("paste", e => {
+  const t = e.target; if(t && (t.tagName==="TEXTAREA" || t.tagName==="INPUT")) return;
+  e.preventDefault(); loadPaste(e);
+});
+$("#sheetSel").addEventListener("change", e => DIALOG ? (setSave("Đang đọc sheet…"), toParent({type:"sheet", name:e.target.value})) : EXCEL ? loadFromExcel(e.target.value) : openSheet(e.target.value));
+$("#btnNew").addEventListener("click", () => { $("#main").classList.add("hidden"); $("#landing").classList.remove("hidden"); });
+$("#q").addEventListener("input", e => { query = e.target.value; refresh(true); });
+$("#chips").addEventListener("click", e => { const c = e.target.closest(".chip"); if(!c) return; filter = c.dataset.f; refresh(true); });
+$("#items").addEventListener("click", e => { const it = e.target.closest(".item"); if(!it) return; curIdx = +it.dataset.i; document.body.classList.remove("list-open"); renderList(); renderDetail(); });
+$("#btnList").addEventListener("click", () => document.body.classList.toggle("list-open"));
+$("#backdrop").addEventListener("click", () => document.body.classList.remove("list-open"));
+$("#btnReload").addEventListener("click", () => DIALOG ? (setSave("Đang đọc lại…"), toParent({type:"reload"})) : loadFromExcel(sheetName, true));
+$("#review").addEventListener("click", e => {
+  const b = e.target.closest(".mini[data-cf]"); if(!b) return;
+  const rec = view[curIdx]; if(!rec) return;
+  const f = b.dataset.cf, k = rec.key + "|" + f;
+  delete conflicts[k];
+  if(b.dataset.act === "excel"){ const ee = edits[rec.key]; if(ee){ delete ee[f]; if(!isChanged(rec)) delete edits[rec.key]; saveEdits(); } keepRefresh(); }
+  else { writeField(rec, f); }
+});
+$("#btnBig").addEventListener("click", () => DIALOG ? toParent({type:"close"}) : openBig());
+$("#opts").addEventListener("click", e => { const b = e.target.closest(".opt"); if(!b) return; $("#sText").value=""; pickS(b.dataset.v); });
+$("#sText").addEventListener("input", e => { const rec=view[curIdx]; if(!rec) return; setEdit(rec,"s",e.target.value); $$("#opts .opt").forEach(b=>b.classList.remove("on")); refreshKeep(rec.key); });
+$("#uText").addEventListener("input", e => { const rec=view[curIdx]; if(!rec) return; setEdit(rec,"u",e.target.value); refreshKeep(rec.key); });
+$("#btnExport").addEventListener("click", () => EXCEL ? writeAllPending() : DIALOG ? resendAll() : openExport());
+$("#cpScript").addEventListener("click", async () => { const ok = await copyText(buildScript().code); toast(ok ? "Đã copy Office Script — dán vào Tự động hóa › Tập lệnh mới" : "Không copy được, hãy bôi đen khung code và Ctrl+C"); });
+$("#cpS").addEventListener("click", async () => { toast(await copyText(buildTSV("s")) ? `Đã copy cột ${settings.colS.toUpperCase()} (${model.allRows.length} dòng)` : "Không copy được"); });
+$("#cpT").addEventListener("click", async () => { toast(await copyText(buildTSV("t")) ? `Đã copy cột ${settings.colT.toUpperCase()} (${model.allRows.length} dòng)` : "Không copy được"); });
+$("#tText").addEventListener("input", e => { const rec=view[curIdx]; if(!rec) return; setEdit(rec,"t",e.target.value); refreshKeep(rec.key); });
+$("#cpU").addEventListener("click", async () => { toast(await copyText(buildTSV("u")) ? `Đã copy cột ${settings.colU.toUpperCase()} (${model.allRows.length} dòng)` : "Không copy được"); });
+$$("[data-close]").forEach(b => b.addEventListener("click", () => b.closest(".modal-bg").classList.remove("show")));
+$$(".modal-bg").forEach(m => m.addEventListener("click", e => { if(e.target===m) m.classList.remove("show"); }));
+$("#btnSettings").addEventListener("click", () => {
+  $("#setOpts").value = settings.opts.join("; "); $("#setS").value = settings.colS; $("#setU").value = settings.colU; $("#setT").value = settings.colT; $("#setReward").value = settings.reward; $("#setOrigin").value = settings.origin;
+  $("#btnClear").classList.toggle("hidden", !model); $("#mSettings").classList.add("show");
+});
+$("#saveSettings").addEventListener("click", () => {
+  const opts = $("#setOpts").value.split(";").map(norm).filter(Boolean);
+  settings = {opts: opts.length?opts:DEFAULT_OPTS, colS: ($("#setS").value||"S").toUpperCase().replace(/[^A-Z]/g,"")||"S",
+              colU: ($("#setU").value||"U").toUpperCase().replace(/[^A-Z]/g,"")||"U", origin: ($("#setOrigin").value||"A1").toUpperCase(),
+              colT: ($("#setT").value||"T").toUpperCase().replace(/[^A-Z]/g,"")||"T", reward: norm($("#setReward").value)};
+  store.set("ytq.settings.v2", settings); $("#mSettings").classList.remove("show");
+  renderOpts();
+  if(source){ if(source.kind==="paste") source.origins["(Đã dán)"] = parseCell(settings.origin); openSheet(sheetName); }
+  toast("Đã lưu cài đặt");
+});
+let clearArm = 0;
+$("#btnClear").addEventListener("click", e => {
+  if(Date.now() - clearArm > 3000){ clearArm = Date.now(); e.target.textContent = "Bấm lần nữa để xoá"; setTimeout(()=>e.target.textContent="Xoá các chỉnh sửa của sheet này",3000); return; }
+  edits = {}; saveEdits(); $("#mSettings").classList.remove("show"); refresh(false); toast("Đã xoá chỉnh sửa");
+});
+document.addEventListener("keydown", e => {
+  if($(".modal-bg.show")){ if(e.key==="Escape") $$(".modal-bg").forEach(m=>m.classList.remove("show")); return; }
+  const t = e.target, typing = t && (t.tagName==="TEXTAREA" || t.tagName==="INPUT" || t.tagName==="SELECT");
+  if(!model || $("#main").classList.contains("hidden")) return;
+  if(typing){
+    if(e.key==="Escape") t.blur();
+    if(e.key==="Enter" && (e.ctrlKey||e.metaKey)){ e.preventDefault(); t.blur(); move(1); }
+    return;
+  }
+  if(e.key==="ArrowRight"){ e.preventDefault(); move(1); }
+  else if(e.key==="ArrowLeft"){ e.preventDefault(); move(-1); }
+  else if(e.key==="j" || e.key==="ArrowDown"){ e.preventDefault(); move(1); }
+  else if(e.key==="k" || e.key==="ArrowUp"){ e.preventDefault(); move(-1); }
+  else if(e.key==="/"){ e.preventDefault(); $("#q").focus(); }
+  else if(e.key==="n"){ e.preventDefault(); $("#uText").focus(); }
+  else if(/^[0-9]$/.test(e.key)){
+    const n = +e.key;
+    if(n===0) pickS(""); else if(settings.opts[n-1]!==undefined) pickS(settings.opts[n-1]);
+  }
+});
+// ----- Cỡ chữ / độ phóng: tự chọn theo độ phân giải, chỉnh được bằng A− / A+ -----
+function autoZoom(){ const w = window.screen ? Math.max(window.innerWidth, 0) : 1400; return w >= 2400 ? 1.2 : w >= 1900 ? 1.1 : 1; }
+function applyZoom(){
+  const z = settings.zoom || autoZoom();
+  const app = document.querySelector(".app");
+  app.style.zoom = z; app.style.height = (100 / z) + "vh";   // giữ vừa khít chiều cao màn hình khi phóng to/thu nhỏ
+  $("#zVal").textContent = Math.round(z*100) + "%"; $("#zVal").title = settings.zoom ? "Đã chỉnh tay — nhấp đúp để về tự động" : "Tự động theo độ phân giải màn hình";
+}
+function stepZoom(d){ const cur = settings.zoom || autoZoom(); settings.zoom = Math.min(1.6, Math.max(0.7, Math.round((cur + d)*100)/100)); store.set("ytq.settings.v2", settings); applyZoom(); }
+$("#zIn").addEventListener("click", () => stepZoom(0.1));
+$("#zOut").addEventListener("click", () => stepZoom(-0.1));
+$("#zVal").addEventListener("dblclick", () => { delete settings.zoom; store.set("ytq.settings.v2", settings); applyZoom(); });
+window.addEventListener("resize", () => { if(!settings.zoom) applyZoom(); });
+applyZoom();
+$("#sideL").addEventListener("click", () => move(-1));
+$("#sideR").addEventListener("click", () => move(1));
+$("#tbSel").addEventListener("change", e => { tbFilter = e.target.value; refresh(true); });
+$("#tbChips").addEventListener("click", e => {
+  const b = e.target.closest(".chip.tb"); if(!b) return;
+  tbFilter = b.dataset.tb;
+  $$("#tbChips .chip.tb").forEach(x => x.classList.toggle("on", x===b));
+  refresh(true);
+});
+// ----- Khởi động: trong Excel thì chạy chế độ add-in, ngoài Excel thì chạy bản thường -----
+function startStandalone(){ if(!source) restoreSession(); }
+if(typeof Office !== "undefined" && Office.onReady){
+  let done = false;
+  Office.onReady(info => {
+    done = true;
+    if(DIALOG) startDialog();
+    else if(info && info.host === Office.HostType.Excel) startExcel(); else startStandalone();
+  });
+  setTimeout(() => { if(!done) startStandalone(); }, 2500);
+} else startStandalone();
+})();
+</script>
+</body>
+</html>
