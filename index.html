@@ -237,6 +237,8 @@ pre.code{background:#f6f7f5;border:1px solid var(--line);border-radius:8px;paddi
 .dvrow .lbl{font-size:11px;color:var(--muted)}
 .dvrow select{flex:1;min-width:0;border:1px solid var(--line);border-radius:999px;padding:4px 12px;font-size:12.5px;cursor:pointer}
 .dvrow select.on{border-color:var(--brand-d);background:var(--brand-2);color:var(--brand-d);font-weight:600}
+.dvrow .lbl{min-width:74px}
+#tbPick.on{border-color:var(--accent);background:#fff4e8;color:#b45f06}
 
 /* ---- Chữ phần chi tiết: rõ thứ bậc, dễ đọc ---- */
 body{font-family:"Be Vietnam Pro","Segoe UI",Roboto,system-ui,sans-serif;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
@@ -251,6 +253,17 @@ h1,h2,h3,.dhead h2{font-family:"Lexend","Be Vietnam Pro","Segoe UI",sans-serif}
 .f .v.em{font-size:13px;font-weight:400;color:#b3bab6}
 .f.key{background:#f6fbf9}
 .f.key label{color:var(--brand-d)}
+
+/* ---- Chữ danh sách bên trái: cùng phong cách với form ---- */
+.item{padding:10px 14px 11px 16px;gap:3px 8px;align-items:center}
+.item .code{font-size:11px;letter-spacing:.05em;font-weight:700;color:var(--brand-d)!important}
+.item .name{font-size:13.5px;line-height:1.5;font-weight:500;color:#1d2a25}
+.item.cur .name{font-weight:600;color:#123b2e}
+.item .pill{font-size:10.5px;font-weight:600;padding:1px 8px;letter-spacing:.01em}
+.item:not(.st-ok):not(.st-no):not(.cur) .pill{color:#8a9893;background:#f3f5f4;border-color:#e6ebe8}
+.search input,#q{font-size:13.5px}
+.tbchips .lbl,.dvrow .lbl{font-size:10.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#7b8c85}
+.chip{font-weight:500}
 </style>
 </head>
 <body>
@@ -291,7 +304,7 @@ h1,h2,h3,.dhead h2{font-family:"Lexend","Be Vietnam Pro","Segoe UI",sans-serif}
       <div class="filters">
         <input id="q" placeholder="Tìm mã số, tên, tác giả, nội dung…  ( / )">
         <select class="tbsel hidden" id="tbSel" title="Lọc theo Tiểu ban"></select>
-        <div class="chips tbchips hidden" id="tbChips" title="Lọc theo Tiểu ban đánh giá"></div>
+        <div class="dvrow hidden" id="tbChips" title="Lọc theo Tiểu ban đánh giá"><span class="lbl">Tiểu ban:</span><select id="tbPick"></select></div>
         <div class="dvrow hidden" id="dvChips" title="Lọc theo Đơn vị công tác"><span class="lbl">Đơn vị:</span><select id="dvSel"></select></div>
         <div class="chips" id="chips">
           <button class="chip on" data-f="all">Tất cả <span></span></button>
@@ -398,7 +411,7 @@ h1,h2,h3,.dhead h2{font-family:"Lexend","Be Vietnam Pro","Segoe UI",sans-serif}
 
 <script>
 /* ---- Tự cập nhật: so mã phiên bản với bản trên server, tránh phải xoá bộ nhớ đệm ---- */
-const BUILD = "2026.11.15-2";
+const BUILD = "2026.11.15-3";
 (function autoUpdate(){
   if(!/^https?:$/.test(location.protocol) || !/github\.io$/i.test(location.hostname)) return;   // chỉ bản đăng trên GitHub Pages
   const check = () => fetch(location.pathname + "?nocache=" + Date.now(), {cache:"no-store"})
@@ -885,16 +898,16 @@ function openSheet(name){
   const tbSel = $("#tbSel");
   tbSel.innerHTML = `<option value="">Tiểu ban: tất cả (${model.rows.length||0})</option>` + tbNames.map(n => `<option value="${esc(n)}">Tiểu ban ${esc(n)} (${tbs[n]})</option>`).join("");
   tbSel.classList.add("hidden");   // thay bằng các nút lọc bên dưới
-  const tbBox = $("#tbChips");
-  tbBox.innerHTML = `<span class="lbl">Tiểu ban:</span><button class="chip tb on" data-tb="">Tất cả</button>` +
-    tbNames.map(n => `<button class="chip tb" data-tb="${esc(n)}">${esc(n)} <span>${tbs[n]}</span></button>`).join("");
-  tbBox.classList.toggle("hidden", tbNames.length < 2);
+  const tbPick = $("#tbPick");
+  tbPick.innerHTML = `<option value="">Tất cả tiểu ban (${model.rows.length||0} ý tưởng)</option>` +
+    tbNames.map(n => `<option value="${esc(n)}">${esc(n)}  ·  ${tbs[n]} ý tưởng</option>`).join("");
+  $("#tbChips").classList.toggle("hidden", tbNames.length < 2);
   // Mặc định lọc Tiểu ban "Công nghệ" nếu có; nếu anh đã chọn tiểu ban khác thì giữ lựa chọn đó khi đọc lại
   if(tbNames.length >= 2){
     const pick = tbNames.includes(prevTb) ? prevTb : (tbChosen ? "" : (tbNames.find(n => /^công nghệ$/i.test(n)) || ""));
     tbFilter = pick;
-    $$("#tbChips .chip.tb").forEach(x => x.classList.toggle("on", x.dataset.tb === pick));
   }
+  tbPick.value = tbFilter; tbPick.classList.toggle("on", !!tbFilter);
   // bộ lọc Đơn vị công tác: một ô có thể ghi nhiều đơn vị (cách nhau bằng , ; / hoặc xuống dòng)
   const prevDv = dvFilter;
   dvFilter = "";
@@ -1403,10 +1416,9 @@ $("#dvSel").addEventListener("change", e => {
   e.target.classList.toggle("on", !!dvFilter);
   refresh(true);
 });
-$("#tbChips").addEventListener("click", e => {
-  const b = e.target.closest(".chip.tb"); if(!b) return;
-  tbFilter = b.dataset.tb; tbChosen = true;
-  $$("#tbChips .chip.tb").forEach(x => x.classList.toggle("on", x===b));
+$("#tbPick").addEventListener("change", e => {
+  tbFilter = e.target.value; tbChosen = true;
+  e.target.classList.toggle("on", !!tbFilter);
   refresh(true);
 });
 // ----- Khởi động: trong Excel thì chạy chế độ add-in, ngoài Excel thì chạy bản thường -----
