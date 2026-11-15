@@ -18,7 +18,7 @@
   --sel:#eef7f7; --radius:12px;
 }
 *{box-sizing:border-box}
-html,body{margin:0;height:100%}
+html,body{margin:0;height:100%;overflow:hidden}
 body{font-family:"Be Vietnam Pro",system-ui,sans-serif;background:var(--bg);color:var(--ink);font-size:14px;line-height:1.55}
 h1,h2,h3,.dhead h2{font-family:"Lexend","Be Vietnam Pro",sans-serif;letter-spacing:-.01em}
 header{position:relative}
@@ -74,7 +74,7 @@ kbd{font-family:inherit;font-size:11.5px;border:1px solid var(--line);border-bot
 .chips{display:flex;gap:6px;flex-wrap:wrap}
 .chip{border:1px solid var(--line);background:#fff;border-radius:999px;padding:3px 10px;font-size:12.5px}
 .chip.on{background:var(--brand);border-color:var(--brand);color:#fff}
-.items{overflow:auto;flex:1}
+.items{overflow:auto;flex:1;position:relative}
 .item{padding:9px 12px;border-bottom:1px solid #eef0ed;cursor:pointer;display:grid;grid-template-columns:1fr auto;gap:2px 8px}
 .item:hover{background:#f7f9f7}
 .item.st-ok{background:#eef8f1;box-shadow:inset 4px 0 0 #2e9a5a}
@@ -189,6 +189,8 @@ pre.code{background:#f6f7f5;border:1px solid var(--line);border-radius:8px;paddi
 .conf{color:var(--warn);font-weight:500}
 .mini{border:1px solid var(--line);background:#fff;border-radius:6px;padding:0 6px;margin-left:4px;font-size:11.5px}
 .mini:hover{border-color:var(--brand);color:var(--brand-d)}
+#btnBig{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:700;border-radius:999px;padding:6px 16px;box-shadow:0 2px 8px rgba(243,154,30,.35)}
+#btnBig:hover{background:#e08a10;border-color:#e08a10}
 .dhead .stt{display:inline-block;background:var(--brand-2);color:var(--brand-d);border-radius:999px;padding:0 8px;font-weight:600;margin-left:4px}
 /* Khung hẹp (task pane trong Excel) */
 @media (max-width:760px){
@@ -368,7 +370,7 @@ let source = null;      // {kind:'file'|'paste', name, sheets:{name: grid}, orig
 let sheetName = "";
 let model = null;       // {headers, headerRow, startRow, startCol, maCol, sCol, uCol, rows:[...], allRows:[...]}
 let edits = {};         // key -> {s, u}
-let filter = "all", query = "", curIdx = -1, view = [], tbFilter = "";
+let filter = "all", query = "", curIdx = -1, view = [], tbFilter = "", tbChosen = false;
 let showEmpty = false;
 
 // ----- helpers -----
@@ -801,6 +803,7 @@ function openSheet(name){
     $("#uLabel").textContent = `Cột ${L(model.uCol)} · Ghi chú`;
   }
   // bộ lọc Tiểu ban: chỉ hiện khi có từ 2 tiểu ban trở lên
+  const prevTb = tbFilter;
   tbFilter = "";
   const tbs = {};
   if(model.tbCol >= 0) model.rows.forEach(r => { const v = norm(r.cells[model.tbCol]); if(v) tbs[v] = (tbs[v]||0) + 1; });
@@ -812,6 +815,12 @@ function openSheet(name){
   tbBox.innerHTML = `<span class="lbl">Tiểu ban:</span><button class="chip tb on" data-tb="">Tất cả</button>` +
     tbNames.map(n => `<button class="chip tb" data-tb="${esc(n)}">${esc(n)} <span>${tbs[n]}</span></button>`).join("");
   tbBox.classList.toggle("hidden", tbNames.length < 2);
+  // Mặc định lọc Tiểu ban "Công nghệ" nếu có; nếu anh đã chọn tiểu ban khác thì giữ lựa chọn đó khi đọc lại
+  if(tbNames.length >= 2){
+    const pick = tbNames.includes(prevTb) ? prevTb : (tbChosen ? "" : (tbNames.find(n => /^công nghệ$/i.test(n)) || ""));
+    tbFilter = pick;
+    $$("#tbChips .chip.tb").forEach(x => x.classList.toggle("on", x.dataset.tb === pick));
+  }
   if(!EXCEL) saveSession();
   curIdx = -1; renderOpts(); refresh(true);
   const lastKey = store.get("ytq.lastKey", "");
@@ -872,7 +881,12 @@ function renderList(){
       <span class="pill ${pillClass(s)}">${esc(s ? (s.length>18? s.slice(0,17)+"…" : s) : "Chưa duyệt")}</span>
       <span class="name">${esc(r.name || "(không có tên)")}</span></div>`;
   }).join("");
-  const cur = box.querySelector(".item.cur"); if(cur) cur.scrollIntoView({block:"center"});
+  // cuộn riêng khung danh sách (không dùng scrollIntoView để trang không bị đẩy lệch lên trên)
+  const cur = box.querySelector(".item.cur");
+  if(cur){
+    const top = cur.offsetTop, h = cur.offsetHeight, vh = box.clientHeight;
+    if(top < box.scrollTop || top + h > box.scrollTop + vh) box.scrollTop = Math.max(0, top - vh/2 + h/2);
+  }
 }
 function renderDetail(){
   const rec = view[curIdx];
@@ -1150,7 +1164,7 @@ $("#sideR").addEventListener("click", () => move(1));
 $("#tbSel").addEventListener("change", e => { tbFilter = e.target.value; refresh(true); });
 $("#tbChips").addEventListener("click", e => {
   const b = e.target.closest(".chip.tb"); if(!b) return;
-  tbFilter = b.dataset.tb;
+  tbFilter = b.dataset.tb; tbChosen = true;
   $$("#tbChips .chip.tb").forEach(x => x.classList.toggle("on", x===b));
   refresh(true);
 });
