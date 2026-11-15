@@ -224,6 +224,13 @@ pre.code{background:#f6f7f5;border:1px solid var(--line);border-radius:8px;paddi
 @media (max-width:900px){.main{grid-template-columns:1fr}.list{max-height:40vh}.ways{grid-template-columns:1fr}.review-grid{grid-template-columns:1fr}}
 @media (max-width:1200px) and (min-width:901px){.review-grid{grid-template-columns:1fr .6fr}.review-grid>div:last-child{grid-column:1/-1}}
 
+/* ---- Thanh báo có phiên bản mới ---- */
+.upd{position:fixed;left:50%;bottom:16px;transform:translateX(-50%);z-index:90;background:#123b2e;color:#fff;border-radius:999px;padding:7px 8px 7px 16px;font-size:13px;display:flex;align-items:center;gap:8px;box-shadow:0 6px 20px rgba(0,0,0,.2)}
+.upd[hidden]{display:none}
+.upd button{border:0;border-radius:999px;padding:4px 12px;font:inherit;cursor:pointer}
+#updBtn{background:var(--accent);color:#fff;font-weight:600}
+#updX{background:transparent;color:#cfe3db;padding:4px 8px}
+
 /* ---- Lọc Đơn vị dạng danh sách ---- */
 .dvrow{display:flex;align-items:center;gap:8px;padding-bottom:6px;border-bottom:1px dashed var(--line)}
 .dvrow.hidden{display:none}
@@ -387,7 +394,33 @@ h1,h2,h3,.dhead h2{font-family:"Lexend","Be Vietnam Pro","Segoe UI",sans-serif}
 </div>
 <div class="backdrop" id="backdrop"></div>
 <div class="toast" id="toast"></div>
+<div class="upd" id="updBar" hidden>Đã có phiên bản mới của tool. <button id="updBtn">Tải lại ngay</button><button id="updX" title="Để sau">✕</button></div>
 
+<script>
+/* ---- Tự cập nhật: so mã phiên bản với bản trên server, tránh phải xoá bộ nhớ đệm ---- */
+const BUILD = "2026.11.15-2";
+(function autoUpdate(){
+  if(!/^https?:$/.test(location.protocol) || !/github\.io$/i.test(location.hostname)) return;   // chỉ bản đăng trên GitHub Pages
+  const check = () => fetch(location.pathname + "?nocache=" + Date.now(), {cache:"no-store"})
+    .then(r => r.ok ? r.text() : "").then(t => (t.match(/const BUILD = "([^"]+)"/) || [])[1] || null).catch(() => null);
+  const go = v => { const u = new URL(location.href); u.searchParams.set("v", v); location.replace(u.toString()); };
+  // Khi mở: có bản mới thì tự chuyển sang luôn (chưa ai thao tác nên không mất gì)
+  check().then(v => {
+    if(!v || v === BUILD) return;
+    const k = "ytq.upd." + v;
+    try{ if(sessionStorage.getItem(k)) return; sessionStorage.setItem(k, "1"); }catch(e){}
+    go(v);
+  });
+  // Đang mở lâu: 30 phút kiểm tra một lần, chỉ báo, để người dùng tự bấm tải lại
+  setInterval(() => check().then(v => {
+    if(!v || v === BUILD) return;
+    const bar = document.getElementById("updBar"); if(!bar) return;
+    bar.hidden = false;
+    document.getElementById("updBtn").onclick = () => go(v);
+    document.getElementById("updX").onclick = () => { bar.hidden = true; };
+  }), 30 * 60 * 1000);
+})();
+</script>
 <script>
 (function(){
 "use strict";
