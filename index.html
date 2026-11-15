@@ -185,6 +185,7 @@ pre.code{background:#f6f7f5;border:1px solid var(--line);border-radius:8px;paddi
 }
 .tbchips{padding-bottom:6px;border-bottom:1px dashed var(--line)}
 .tbchips .lbl{font-size:11px;color:var(--muted);align-self:center;margin-right:2px}
+.chip.tb.dv.on{background:var(--brand-d);border-color:var(--brand-d);color:#fff}
 .chip.tb.on{background:var(--accent);border-color:var(--accent);color:#fff}
 .conf{color:var(--warn);font-weight:500}
 .mini{border:1px solid var(--line);background:#fff;border-radius:6px;padding:0 6px;margin-left:4px;font-size:11.5px}
@@ -260,6 +261,7 @@ pre.code{background:#f6f7f5;border:1px solid var(--line);border-radius:8px;paddi
         <input id="q" placeholder="Tìm mã số, tên, tác giả, nội dung…  ( / )">
         <select class="tbsel hidden" id="tbSel" title="Lọc theo Tiểu ban"></select>
         <div class="chips tbchips hidden" id="tbChips" title="Lọc theo Tiểu ban đánh giá"></div>
+        <div class="chips tbchips hidden" id="dvChips" title="Lọc theo Đơn vị công tác"></div>
         <div class="chips" id="chips">
           <button class="chip on" data-f="all">Tất cả <span></span></button>
           <button class="chip" data-f="todo">Chưa duyệt <span></span></button>
@@ -370,7 +372,7 @@ let source = null;      // {kind:'file'|'paste', name, sheets:{name: grid}, orig
 let sheetName = "";
 let model = null;       // {headers, headerRow, startRow, startCol, maCol, sCol, uCol, rows:[...], allRows:[...]}
 let edits = {};         // key -> {s, u}
-let filter = "all", query = "", curIdx = -1, view = [], tbFilter = "", tbChosen = false;
+let filter = "all", query = "", curIdx = -1, view = [], tbFilter = "", tbChosen = false, dvFilter = "";
 let showEmpty = false;
 
 // ----- helpers -----
@@ -767,6 +769,8 @@ function openSheet(name){
     const nameCol = findCol(/^tên ý tưởng|tên ý tưởng/);
     const sttCol = headers.findIndex(x => /^(stt|tt|số tt|số thứ tự)$/i.test(x.trim()));
     let tbCol = findCol(/^tiểu ban/);
+    // Đơn vị công tác của tác giả (không lấy cột "Đơn vị nghiên cứu/áp dụng" vì đó là ý kiến)
+    const dvCol = headers.findIndex(x => /^đơn vị( công tác)?$/i.test(x.trim()) || /^đơn vị công tác/i.test(x.trim()));
     if(tbCol < 0){ const p = colToIdx("P") - org.c; if(p>=0 && p<headers.length && /tiểu ban/i.test(headers[p])) tbCol = p; }
     const rows = [], allRows = [];
     for(let r=h.row+1; r<grid.length; r++){
@@ -780,7 +784,7 @@ function openSheet(name){
     }
     // trim trailing empty rows
     while(allRows.length && !allRows[allRows.length-1].cells.some(v=>norm(v))) allRows.pop();
-    model = {headers, headerRow:h.row, maCol:h.col, nameCol, sttCol, tbCol, sCol, tCol, uCol, org, rows, allRows};
+    model = {headers, headerRow:h.row, maCol:h.col, nameCol, sttCol, tbCol, dvCol, sCol, tCol, uCol, org, rows, allRows};
   }
   edits = store.get(editKey(), {});
   // sheet selector
@@ -821,6 +825,17 @@ function openSheet(name){
     tbFilter = pick;
     $$("#tbChips .chip.tb").forEach(x => x.classList.toggle("on", x.dataset.tb === pick));
   }
+  // bộ lọc Đơn vị công tác: một ô có thể ghi nhiều đơn vị (cách nhau bằng , ; / hoặc xuống dòng)
+  const prevDv = dvFilter;
+  dvFilter = "";
+  const dvs = {};
+  if(model.dvCol >= 0) model.rows.forEach(r => unitsOf(r).forEach(u => dvs[u] = (dvs[u]||0) + 1));
+  const dvNames = Object.keys(dvs).sort((a,b)=>a.localeCompare(b,"vi"));
+  const dvBox = $("#dvChips");
+  dvBox.innerHTML = `<span class="lbl">Đơn vị:</span><button class="chip tb dv on" data-dv="">Tất cả</button>` +
+    dvNames.map(n => `<button class="chip tb dv" data-dv="${esc(n)}">${esc(n)} <span>${dvs[n]}</span></button>`).join("");
+  dvBox.classList.toggle("hidden", dvNames.length < 2);
+  if(dvNames.includes(prevDv)){ dvFilter = prevDv; $$("#dvChips .chip.dv").forEach(x => x.classList.toggle("on", x.dataset.dv === prevDv)); }
   if(!EXCEL) saveSession();
   curIdx = -1; renderOpts(); refresh(true);
   const lastKey = store.get("ytq.lastKey", "");
@@ -858,6 +873,7 @@ function refresh(resetSel){
     if(filter==="done" && !norm(curS(r))) return false;
     if(filter==="changed" && !isChanged(r)) return false;
     if(tbFilter && model.tbCol>=0 && norm(r.cells[model.tbCol])!==tbFilter) return false;
+    if(dvFilter && model.dvCol>=0 && !unitsOf(r).includes(dvFilter)) return false;
     if(q && !r.cells.join(" ").toLowerCase().includes(q) && !curU(r).toLowerCase().includes(q)) return false;
     return true;
   });
@@ -1162,6 +1178,13 @@ applyZoom();
 $("#sideL").addEventListener("click", () => move(-1));
 $("#sideR").addEventListener("click", () => move(1));
 $("#tbSel").addEventListener("change", e => { tbFilter = e.target.value; refresh(true); });
+function unitsOf(r){ return String(r.cells[model.dvCol] ?? "").split(/[,;\/\n]+/).map(x => norm(x).toUpperCase()).filter(Boolean); }
+$("#dvChips").addEventListener("click", e => {
+  const b = e.target.closest(".chip.dv"); if(!b) return;
+  dvFilter = b.dataset.dv;
+  $$("#dvChips .chip.dv").forEach(x => x.classList.toggle("on", x===b));
+  refresh(true);
+});
 $("#tbChips").addEventListener("click", e => {
   const b = e.target.closest(".chip.tb"); if(!b) return;
   tbFilter = b.dataset.tb; tbChosen = true;
